@@ -23,10 +23,6 @@ matrix:
         - cargo install xargo --force
         - rustup target install armv7-unknown-linux-gnueabihf
         - rustup component add rust-src
-    - rust: nightly
-      before_script: rustup component add rustfmt-preview
-      script:
-        - cargo fmt --all -- --write-mode=diff
 
 install:
   - curl -LSfs https://japaric.github.io/trust/install.sh | sh -s -- --git japaric/cross --force
