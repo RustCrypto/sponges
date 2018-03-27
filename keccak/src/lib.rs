@@ -1,8 +1,5 @@
 //! Keccak [sponge function](https://en.wikipedia.org/wiki/Sponge_function).
 //!
-//! The function code is fully unrolled and is nearly as fast as the Keccak
-//! team's optimized implementation.
-//!
 //! If you are looking for SHA-3 hash functions take a look at [`sha3`][1] and
 //! [`tiny-keccak`][2] crates.
 //!
@@ -140,7 +137,9 @@ macro_rules! unroll24 {
 pub fn f1600(a: &mut [u64; PLEN]) {
     let mut arrays: [[u64; 5]; 24] = [[0; 5]; 24];
 
-    unroll24!(i, {
+    // not unrolling this loop results in a much smaller function, plus
+    // it positively influences performance due to the smaller load on I-cache
+    for i in 0..24 {
         // Theta
         unroll5!(x, {
             // This looks useless but it gets way slower without it. I tried
@@ -190,5 +189,5 @@ pub fn f1600(a: &mut [u64; PLEN]) {
 
         // Iota
         a[0] ^= RC[i];
-    });
+    }
 }
