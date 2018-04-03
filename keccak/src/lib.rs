@@ -135,31 +135,22 @@ macro_rules! unroll24 {
 #[allow(unused_assignments)]
 /// Keccak-f[1600] sponge function
 pub fn f1600(a: &mut [u64; PLEN]) {
-    let mut arrays: [[u64; 5]; 24] = [[0; 5]; 24];
-
     // not unrolling this loop results in a much smaller function, plus
     // it positively influences performance due to the smaller load on I-cache
     for i in 0..24 {
+        let mut array = [0u64; 5];
+
         // Theta
         unroll5!(x, {
-            // This looks useless but it gets way slower without it. I tried
-            // using `mem::uninitialized` for the initialisation of `arrays` but
-            // that also makes it slower, although not by as much as removing
-            // this assignment. Optimisers are weird. Maybe a different version
-            // of LLVM will react differently, so if you see this comment
-            // in the future try deleting this assignment and using uninit
-            // above and see how it affects the benchmarks.
-            arrays[i][x] = 0;
-
             unroll5!(y, {
-                arrays[i][x] ^= a[5 * y + x];
+                array[x] ^= a[5 * y + x];
             });
         });
 
         unroll5!(x, {
             unroll5!(y, {
-                let t1 = arrays[i][(x + 4) % 5];
-                let t2 = arrays[i][(x + 1) % 5].rotate_left(1);
+                let t1 = array[(x + 4) % 5];
+                let t2 = array[(x + 1) % 5].rotate_left(1);
                 a[5 * y + x] ^= t1 ^ t2;
             });
         });
@@ -167,9 +158,9 @@ pub fn f1600(a: &mut [u64; PLEN]) {
         // Rho and pi
         let mut last = a[1];
         unroll24!(x, {
-            arrays[i][0] = a[PI[x]];
+            array[0] = a[PI[x]];
             a[PI[x]] = last.rotate_left(RHO[x]);
-            last = arrays[i][0];
+            last = array[0];
         });
 
         // Chi
@@ -177,13 +168,13 @@ pub fn f1600(a: &mut [u64; PLEN]) {
             let y = 5 * y_step;
 
             unroll5!(x, {
-                arrays[i][x] = a[y + x];
+                array[x] = a[y + x];
             });
 
             unroll5!(x, {
-                let t1 = !arrays[i][(x + 1) % 5];
-                let t2 = arrays[i][(x + 2) % 5];
-                a[y + x] = arrays[i][x] ^ (t1 & t2);
+                let t1 = !array[(x + 1) % 5];
+                let t2 = array[(x + 2) % 5];
+                a[y + x] = array[x] ^ (t1 & t2);
             });
         });
 
