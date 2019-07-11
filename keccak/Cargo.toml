@@ -9,8 +9,16 @@ repository = "https://github.com/RustCrypto/sponges"
 keywords = ["crypto", "sponge", "keccak-f"]
 categories = ["cryptography", "no-std"]
 
+[dependencies]
+packed_simd = { version = "0.3.3", optional = true }
+
+[dev-dependencies]
+rand_os = "0.1.0"
+rand_core = "0.3.0"
+
 [features]
 no_unroll = []
+simd = ["packed_simd"]
 
 [badges]
 travis-ci = { repository = "RustCrypto/sponges" }

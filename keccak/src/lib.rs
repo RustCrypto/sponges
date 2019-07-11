@@ -182,3 +182,9 @@ pub fn f1600(a: &mut [u64; PLEN]) {
         a[0] ^= RC[i];
     }
 }
+
+#[cfg(feature = "simd")]
+mod simd;
+
+#[cfg(feature = "simd")]
+pub use simd::*;
