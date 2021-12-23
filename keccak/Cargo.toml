@@ -11,6 +11,3 @@ categories = ["cryptography", "no-std"]
 
 [features]
 no_unroll = []
-
-[badges]
-travis-ci = { repository = "RustCrypto/sponges" }
