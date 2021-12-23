@@ -38,16 +38,17 @@
 #![no_std]
 #![allow(non_upper_case_globals)]
 
+#[rustfmt::skip]
+mod unroll;
+
 const PLEN: usize = 25;
 
 const RHO: [u32; 24] = [
-    1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 8, 25, 43, 62, 18,
-    39, 61, 20, 44,
+    1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 8, 25, 43, 62, 18, 39, 61, 20, 44,
 ];
 
 const PI: [usize; 24] = [
-    10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12, 2, 20, 14,
-    22, 9, 6, 1,
+    10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12, 2, 20, 14, 22, 9, 6, 1,
 ];
 
 const RC: [u64; 24] = [
@@ -76,61 +77,6 @@ const RC: [u64; 24] = [
     0x0000000080000001,
     0x8000000080008008,
 ];
-
-#[cfg(not(feature = "no_unroll"))]
-macro_rules! unroll5 {
-    ($var:ident, $body:block) => {
-        { const $var: usize = 0; $body; }
-        { const $var: usize = 1; $body; }
-        { const $var: usize = 2; $body; }
-        { const $var: usize = 3; $body; }
-        { const $var: usize = 4; $body; }
-    };
-}
-
-#[cfg(feature = "no_unroll")]
-macro_rules! unroll5 {
-    ($var:ident, $body:block) => {
-        for $var in 0..5 $body
-    }
-}
-
-#[cfg(not(feature = "no_unroll"))]
-macro_rules! unroll24 {
-    ($var: ident, $body: block) => {
-        { const $var: usize = 0; $body; }
-        { const $var: usize = 1; $body; }
-        { const $var: usize = 2; $body; }
-        { const $var: usize = 3; $body; }
-        { const $var: usize = 4; $body; }
-        { const $var: usize = 5; $body; }
-        { const $var: usize = 6; $body; }
-        { const $var: usize = 7; $body; }
-        { const $var: usize = 8; $body; }
-        { const $var: usize = 9; $body; }
-        { const $var: usize = 10; $body; }
-        { const $var: usize = 11; $body; }
-        { const $var: usize = 12; $body; }
-        { const $var: usize = 13; $body; }
-        { const $var: usize = 14; $body; }
-        { const $var: usize = 15; $body; }
-        { const $var: usize = 16; $body; }
-        { const $var: usize = 17; $body; }
-        { const $var: usize = 18; $body; }
-        { const $var: usize = 19; $body; }
-        { const $var: usize = 20; $body; }
-        { const $var: usize = 21; $body; }
-        { const $var: usize = 22; $body; }
-        { const $var: usize = 23; $body; }
-    };
-}
-
-#[cfg(feature = "no_unroll")]
-macro_rules! unroll24 {
-    ($var:ident, $body:block) => {
-        for $var in 0..24 $body
-    }
-}
 
 #[allow(unused_assignments)]
 /// Keccak-f[1600] sponge function
