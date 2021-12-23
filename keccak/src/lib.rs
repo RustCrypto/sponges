@@ -83,7 +83,7 @@ const RC: [u64; 24] = [
 pub fn f1600(a: &mut [u64; PLEN]) {
     // not unrolling this loop results in a much smaller function, plus
     // it positively influences performance due to the smaller load on I-cache
-    for i in 0..24 {
+    for rc in &RC {
         let mut array = [0u64; 5];
 
         // Theta
@@ -125,6 +125,6 @@ pub fn f1600(a: &mut [u64; PLEN]) {
         });
 
         // Iota
-        a[0] ^= RC[i];
+        a[0] ^= rc;
     }
 }
