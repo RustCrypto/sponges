@@ -38,6 +38,9 @@
 #![no_std]
 #![allow(non_upper_case_globals)]
 
+#[cfg(feature = "simd")]
+extern crate packed_simd;
+
 use core::{
     convert::TryInto,
     fmt::Debug,
@@ -132,7 +135,7 @@ impl_lanesize!(u64, 24, |rc: u64| { rc });
 
 macro_rules! impl_keccak {
     ($name:ident, $type:ty) => {
-        /// Keccak-$name sponge function
+        /// Keccak-f sponge function
         pub fn $name(state: &mut [$type; PLEN]) {
             keccak_p(state, <$type>::KECCAK_F_ROUND_COUNT);
         }
@@ -143,6 +146,38 @@ impl_keccak!(f200, u8);
 impl_keccak!(f400, u16);
 impl_keccak!(f800, u32);
 impl_keccak!(f1600, u64);
+
+#[cfg(feature = "simd")]
+/// SIMD implementations for Keccak-f1600 sponge function
+pub mod simd {
+    #[cfg(feature = "simd")]
+    pub use packed_simd::{u64x2, u64x4, u64x8};
+    use {keccak_p, LaneSize, PLEN};
+
+    macro_rules! impl_lanesize_simd_u64xn {
+        ($type:ty) => {
+            impl LaneSize for $type {
+                const KECCAK_F_ROUND_COUNT: usize = 24;
+
+                fn truncate_rc(rc: u64) -> Self {
+                    Self::splat(rc)
+                }
+
+                fn rotate_left(self, n: u32) -> Self {
+                    self.rotate_left(Self::splat(n.into()))
+                }
+            }
+        };
+    }
+
+    impl_lanesize_simd_u64xn!(u64x2);
+    impl_lanesize_simd_u64xn!(u64x4);
+    impl_lanesize_simd_u64xn!(u64x8);
+
+    impl_keccak!(f1600x2, u64x2);
+    impl_keccak!(f1600x4, u64x4);
+    impl_keccak!(f1600x8, u64x8);
+}
 
 #[allow(unused_assignments)]
 /// Generic Keccak-p sponge function
@@ -331,5 +366,81 @@ mod tests {
         ];
 
         keccak_f::<u64>(state_first, state_second);
+    }
+
+    #[cfg(feature = "simd")]
+    mod simd {
+        use simd::{u64x2, u64x4, u64x8};
+        use tests::keccak_f;
+
+        macro_rules! impl_keccak_f1600xn {
+            ($name:ident, $type:ty) => {
+                #[test]
+                fn $name() {
+                    // Test vectors are copied from XKCP (eXtended Keccak Code Package)
+                    // https://github.com/XKCP/XKCP/blob/master/tests/TestVectors/KeccakF-1600-IntermediateValues.txt
+                    let state_first = [
+                        <$type>::splat(0xF1258F7940E1DDE7),
+                        <$type>::splat(0x84D5CCF933C0478A),
+                        <$type>::splat(0xD598261EA65AA9EE),
+                        <$type>::splat(0xBD1547306F80494D),
+                        <$type>::splat(0x8B284E056253D057),
+                        <$type>::splat(0xFF97A42D7F8E6FD4),
+                        <$type>::splat(0x90FEE5A0A44647C4),
+                        <$type>::splat(0x8C5BDA0CD6192E76),
+                        <$type>::splat(0xAD30A6F71B19059C),
+                        <$type>::splat(0x30935AB7D08FFC64),
+                        <$type>::splat(0xEB5AA93F2317D635),
+                        <$type>::splat(0xA9A6E6260D712103),
+                        <$type>::splat(0x81A57C16DBCF555F),
+                        <$type>::splat(0x43B831CD0347C826),
+                        <$type>::splat(0x01F22F1A11A5569F),
+                        <$type>::splat(0x05E5635A21D9AE61),
+                        <$type>::splat(0x64BEFEF28CC970F2),
+                        <$type>::splat(0x613670957BC46611),
+                        <$type>::splat(0xB87C5A554FD00ECB),
+                        <$type>::splat(0x8C3EE88A1CCF32C8),
+                        <$type>::splat(0x940C7922AE3A2614),
+                        <$type>::splat(0x1841F924A2C509E4),
+                        <$type>::splat(0x16F53526E70465C2),
+                        <$type>::splat(0x75F644E97F30A13B),
+                        <$type>::splat(0xEAF1FF7B5CECA249),
+                    ];
+                    let state_second = [
+                        <$type>::splat(0x2D5C954DF96ECB3C),
+                        <$type>::splat(0x6A332CD07057B56D),
+                        <$type>::splat(0x093D8D1270D76B6C),
+                        <$type>::splat(0x8A20D9B25569D094),
+                        <$type>::splat(0x4F9C4F99E5E7F156),
+                        <$type>::splat(0xF957B9A2DA65FB38),
+                        <$type>::splat(0x85773DAE1275AF0D),
+                        <$type>::splat(0xFAF4F247C3D810F7),
+                        <$type>::splat(0x1F1B9EE6F79A8759),
+                        <$type>::splat(0xE4FECC0FEE98B425),
+                        <$type>::splat(0x68CE61B6B9CE68A1),
+                        <$type>::splat(0xDEEA66C4BA8F974F),
+                        <$type>::splat(0x33C43D836EAFB1F5),
+                        <$type>::splat(0xE00654042719DBD9),
+                        <$type>::splat(0x7CF8A9F009831265),
+                        <$type>::splat(0xFD5449A6BF174743),
+                        <$type>::splat(0x97DDAD33D8994B40),
+                        <$type>::splat(0x48EAD5FC5D0BE774),
+                        <$type>::splat(0xE3B8C8EE55B7B03C),
+                        <$type>::splat(0x91A0226E649E42E9),
+                        <$type>::splat(0x900E3129E7BADD7B),
+                        <$type>::splat(0x202A9EC5FAA3CCE8),
+                        <$type>::splat(0x5B3402464E1C3DB6),
+                        <$type>::splat(0x609F4E62A44C1059),
+                        <$type>::splat(0x20D06CD26A8FBF5C),
+                    ];
+
+                    keccak_f::<$type>(state_first, state_second);
+                }
+            };
+        }
+
+        impl_keccak_f1600xn!(keccak_f1600x2, u64x2);
+        impl_keccak_f1600xn!(keccak_f1600x4, u64x4);
+        impl_keccak_f1600xn!(keccak_f1600x8, u64x8);
     }
 }

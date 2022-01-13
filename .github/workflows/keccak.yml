@@ -66,10 +66,25 @@ jobs:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           override: true
-      - run: cargo check --all-features
+      - run: cargo check --no-default-features
+      - run: cargo check
+      - run: cargo check --features no_unroll
       - run: cargo test --no-default-features
       - run: cargo test
-      - run: cargo test --all-features
+      - run: cargo test --features no_unroll
+
+  test-simd:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: RustCrypto/actions/cargo-cache@master
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+      - run: cargo check --features simd
+      - run: cargo test --features simd
 
   # Cross-compiled tests
   cross:
