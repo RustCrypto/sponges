@@ -9,5 +9,9 @@ repository = "https://github.com/RustCrypto/sponges"
 keywords = ["crypto", "sponge", "keccak", "keccak-f", "keccak-p"]
 categories = ["cryptography", "no-std"]
 
+[dependencies]
+packed_simd = { version = "0.3.7", package = "packed_simd_2", optional = true }
+
 [features]
 no_unroll = []
+simd = ["packed_simd"]
