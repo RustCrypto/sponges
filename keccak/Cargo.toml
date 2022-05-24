@@ -2,10 +2,10 @@
 name = "keccak"
 version = "0.1.1"
 authors = ["RustCrypto Developers"]
-license = "CC0-1.0"
 description = "Keccak sponge function"
+license = "Apache-2.0 OR MIT"
 documentation = "https://docs.rs/keccak"
-repository = "https://github.com/RustCrypto/sponges"
+repository = "https://github.com/RustCrypto/sponges/tree/master/keccak"
 keywords = ["crypto", "sponge", "keccak", "keccak-f", "keccak-p"]
 categories = ["cryptography", "no-std"]
 readme = "README.md"
