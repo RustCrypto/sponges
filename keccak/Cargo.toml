@@ -14,5 +14,5 @@ categories = ["cryptography", "no-std"]
 readme = "README.md"
 
 [features]
-no_unroll = [] # Do no unroll loops to reduce binary size
+no_unroll = [] # Do no unroll loops for binary size reduction
 simd = [] # Use core::simd (WARNING: requires Nigthly)
