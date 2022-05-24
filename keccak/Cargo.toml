@@ -1,8 +1,11 @@
 [package]
 name = "keccak"
 version = "0.1.1"
+description = """
+Pure Rust implementation of the Keccak sponge function including the keccak-f
+and keccak-p variants
+"""
 authors = ["RustCrypto Developers"]
-description = "Keccak sponge function"
 license = "Apache-2.0 OR MIT"
 documentation = "https://docs.rs/keccak"
 repository = "https://github.com/RustCrypto/sponges/tree/master/keccak"
