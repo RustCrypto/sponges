@@ -13,8 +13,6 @@ keywords = ["crypto", "sponge", "keccak", "keccak-f", "keccak-p"]
 categories = ["cryptography", "no-std"]
 readme = "README.md"
 
-[dependencies]
-
 [features]
-no_unroll = []
-simd = []
+no_unroll = [] # Do no unroll loops for binary size reduction
+simd = [] # Use core::simd (WARNING: requires Nigthly)
