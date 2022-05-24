@@ -37,9 +37,7 @@
 //! [2]: https://docs.rs/tiny-keccak
 #![no_std]
 #![allow(non_upper_case_globals)]
-
-#[cfg(feature = "simd")]
-extern crate packed_simd;
+#![cfg_attr(feature = "simd", feature(portable_simd))]
 
 use core::{
     convert::TryInto,
@@ -150,8 +148,7 @@ impl_keccak!(f1600, u64);
 #[cfg(feature = "simd")]
 /// SIMD implementations for Keccak-f1600 sponge function
 pub mod simd {
-    #[cfg(feature = "simd")]
-    pub use packed_simd::{u64x2, u64x4, u64x8};
+    pub use core::simd::{u64x2, u64x4, u64x8};
     use {keccak_p, LaneSize, PLEN};
 
     macro_rules! impl_lanesize_simd_u64xn {
@@ -164,7 +161,7 @@ pub mod simd {
                 }
 
                 fn rotate_left(self, n: u32) -> Self {
-                    self.rotate_left(Self::splat(n.into()))
+                    self << Self::splat(n.into()) | self >> Self::splat((64 - n).into())
                 }
             }
         };

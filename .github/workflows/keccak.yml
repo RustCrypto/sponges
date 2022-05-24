@@ -45,12 +45,10 @@ jobs:
           override: true
       - run: cargo build --no-default-features --target ${{ matrix.target }}
 
-  # TODO(tarcieri): fix issues with `packed_simd_2`
-  # See: https://github.com/RustCrypto/sponges/runs/6581411295?check_suite_focus=true
-  #minimal-versions:
-  #  uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
-  #  with:
-  #      working-directory: ${{ github.workflow }}
+  minimal-versions:
+    uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
+    with:
+        working-directory: ${{ github.workflow }}
 
   test:
     needs: set-msrv
@@ -83,7 +81,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly-2022-04-01
+          toolchain: nightly
           override: true
       - run: cargo check --features simd
       - run: cargo test --features simd

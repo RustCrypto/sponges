@@ -14,8 +14,7 @@ categories = ["cryptography", "no-std"]
 readme = "README.md"
 
 [dependencies]
-packed_simd = { version = "0.3.7", package = "packed_simd_2", optional = true }
 
 [features]
 no_unroll = []
-simd = ["packed_simd"]
+simd = []
