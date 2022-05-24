@@ -7,9 +7,18 @@
 ![Rust Version][rustc-image]
 [![Project Chat][chat-image]][chat-link]
 
-Pure Rust implementation of the [Keccak Sponge Function][1].
+Pure Rust implementation of the [Keccak Sponge Function][1] including the keccak-f
+and keccak-p variants.
 
 [Documentation][docs-link]
+
+## About
+
+This crate implements the core Keccak sponge function, upon which many other
+cryptographic functions are built.
+
+For the SHA-3 family including the SHAKE XOFs, see the [`sha3`] crate, which
+is built on this crate.
 
 ## Minimum Supported Rust Version
 
@@ -54,3 +63,4 @@ dual licensed as above, without any additional terms or conditions.
 [//]: # (general links)
 
 [1]: https://keccak.team/keccak.html
+[`sha3`]: https://github.com/RustCrypto/hashes/tree/master/sha3
