@@ -19,6 +19,9 @@ pub fn keccak_f1600(state: &mut [u64; 25]) {
             sub x0, x0, #192
 
             // Loop 24 rounds
+            // NOTE: This loop actually computes two f1600 functions in
+            // parallel, in both the lower and the upper 64-bit of the
+            // 128-bit registers v0-v24.
             mov	x8, #24
         0:  sub	x8, x8, #1
 
