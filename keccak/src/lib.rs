@@ -48,6 +48,7 @@ use core::{
 
 #[rustfmt::skip]
 mod unroll;
+mod aarch64_sha3;
 
 const PLEN: usize = 25;
 
@@ -143,7 +144,12 @@ macro_rules! impl_keccak {
 impl_keccak!(f200, u8);
 impl_keccak!(f400, u16);
 impl_keccak!(f800, u32);
+
+#[cfg(not(all(target_arch = "aarch64", target_feature = "sha3")))]
 impl_keccak!(f1600, u64);
+
+#[cfg(all(target_arch = "aarch64", target_feature = "sha3"))]
+pub use aarch64_sha3::keccak_f1600 as f1600;
 
 #[cfg(feature = "simd")]
 /// SIMD implementations for Keccak-f1600 sponge function
