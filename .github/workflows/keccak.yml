@@ -116,3 +116,38 @@ jobs:
           package: ${{ github.workflow }}
           target: ${{ matrix.target }}
           features: ${{ matrix.features }}
+
+  aarch64-sha3:
+    needs: set-msrv
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+      # Cross mounts only current package, i.e. by default it ignores workspace's Cargo.toml
+        working-directory: .
+    strategy:
+      matrix:
+        rust:
+          - ${{needs.set-msrv.outputs.msrv}}
+          - stable
+    steps:
+      - uses: actions/checkout@v3
+      - uses: RustCrypto/actions/cargo-cache@master
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          target: aarch64-unknown-linux-gnu
+          override: true
+      - name: Install pre-compiled cross
+        run: |
+          # We need a recent version for RUSTFLAGS to work.
+          wget -O /tmp/binaries.tar.gz https://github.com/cross-rs/cross/releases/download/v0.2.4/cross-x86_64-unknown-linux-gnu.tar.gz
+          tar -C /tmp -xzf /tmp/binaries.tar.gz
+          mv /tmp/cross ~/.cargo/bin
+        shell: bash
+      - name: cross test
+        run: |
+          cd keccak
+          # Cross doesn't enable `sha3` by default, but QEMU supports it.
+          export RUSTFLAGS="-C target-feature=+sha3"
+          cross test --target aarch64-unknown-linux-gnu --no-default-features
