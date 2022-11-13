@@ -4,7 +4,7 @@
 /// Adapted from the Keccak-f1600 implementation in the XKCP/K12.
 /// see <https://github.com/XKCP/K12/blob/df6a21e6d1f34c1aa36e8d702540899c97dba5a0/lib/ARMv8Asha3/KeccakP-1600-ARMv8Asha3.S#L69>
 #[target_feature(enable = "sha3")]
-pub unsafe fn f1600_asm(state: &mut [u64; 25]) {
+pub unsafe fn f1600_armv8_sha3_asm(state: &mut [u64; 25]) {
     core::arch::asm!("
         // Read state
         ld1.1d {{ v0- v3}}, [x0], #32
