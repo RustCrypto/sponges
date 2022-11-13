@@ -50,10 +50,10 @@ use core::{
 mod unroll;
 
 #[cfg(all(target_arch = "aarch64", feature = "asm"))]
-mod aarch64_sha3;
+mod armv8;
 
 #[cfg(all(target_arch = "aarch64", feature = "asm"))]
-pub use aarch64_sha3::f1600_asm;
+pub use armv8::f1600_asm;
 
 #[cfg(all(target_arch = "aarch64", feature = "asm"))]
 cpufeatures::new!(armv8_sha3_intrinsics, "sha3");
