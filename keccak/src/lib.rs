@@ -48,7 +48,15 @@ use core::{
 
 #[rustfmt::skip]
 mod unroll;
+
+#[cfg(all(target_arch = "aarch64", feature = "asm"))]
 mod aarch64_sha3;
+
+#[cfg(all(target_arch = "aarch64", feature = "asm"))]
+pub use aarch64_sha3::f1600_asm;
+
+#[cfg(all(target_arch = "aarch64", feature = "asm"))]
+cpufeatures::new!(armv8_sha3_intrinsics, "sha3");
 
 const PLEN: usize = 25;
 
@@ -145,11 +153,17 @@ impl_keccak!(f200, u8);
 impl_keccak!(f400, u16);
 impl_keccak!(f800, u32);
 
-#[cfg(not(all(target_arch = "aarch64", target_feature = "sha3")))]
+#[cfg(not(all(target_arch = "aarch64", feature = "asm")))]
 impl_keccak!(f1600, u64);
 
-#[cfg(all(target_arch = "aarch64", target_feature = "sha3"))]
-pub use aarch64_sha3::keccak_f1600 as f1600;
+#[cfg(all(target_arch = "aarch64", feature = "asm"))]
+pub fn f1600(state: &mut [u64; PLEN]) {
+    if armv8_sha3_intrinsics::get() {
+        unsafe { f1600_asm(state) }
+    } else {
+        keccak_p(state, u64::KECCAK_F_ROUND_COUNT);
+    }
+}
 
 #[cfg(feature = "simd")]
 /// SIMD implementations for Keccak-f1600 sponge function
