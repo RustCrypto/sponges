@@ -53,9 +53,6 @@ mod unroll;
 mod armv8;
 
 #[cfg(all(target_arch = "aarch64", feature = "asm"))]
-pub use armv8::f1600_armv8_sha3_asm;
-
-#[cfg(all(target_arch = "aarch64", feature = "asm"))]
 cpufeatures::new!(armv8_sha3_intrinsics, "sha3");
 
 const PLEN: usize = 25;
@@ -159,7 +156,7 @@ impl_keccak!(f1600, u64);
 #[cfg(all(target_arch = "aarch64", feature = "asm"))]
 pub fn f1600(state: &mut [u64; PLEN]) {
     if armv8_sha3_intrinsics::get() {
-        unsafe { f1600_armv8_sha3_asm(state) }
+        unsafe { armv8::f1600_armv8_sha3_asm(state) }
     } else {
         keccak_p(state, u64::KECCAK_F_ROUND_COUNT);
     }
