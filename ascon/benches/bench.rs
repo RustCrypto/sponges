@@ -1,11 +1,10 @@
 #![feature(test)]
 
-extern crate test;
 extern crate ascon;
+extern crate test;
 
+use ascon::{aead_decrypt, aead_encrypt};
 use test::Bencher;
-use ascon::{ aead_encrypt, aead_decrypt };
-
 
 #[bench]
 fn ascon_encrypt_bench(b: &mut Bencher) {

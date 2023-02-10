@@ -23,27 +23,17 @@ jobs:
     with:
         msrv: 1.41.0
 
-  build:
-    needs: set-msrv
+  benches:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust:
-          - ${{needs.set-msrv.outputs.msrv}}
-          - stable
-        target:
-          - thumbv7em-none-eabi
-          - wasm32-unknown-unknown
     steps:
       - uses: actions/checkout@v3
       - uses: RustCrypto/actions/cargo-cache@master
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: ${{ matrix.rust }}
-          target: ${{ matrix.target }}
+          toolchain: nightly-2023-02-01
           override: true
-      - run: cargo build --no-default-features --target ${{ matrix.target }}
+      - run: cargo build --benches
 
   minimal-versions:
     uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master

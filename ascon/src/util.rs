@@ -1,7 +1,6 @@
-use byteorder::{ BigEndian, ByteOrder };
+use byteorder::{BigEndian, ByteOrder};
 
 pub type Endian = BigEndian;
-
 
 #[inline]
 pub fn u8_to_u64(input: &[u8], output: &mut [u64]) {
@@ -21,7 +20,8 @@ pub fn eq(a: &[u8], b: &[u8]) -> bool {
     if a.len() != b.len() {
         false
     } else {
-        a.iter().zip(b)
+        a.iter()
+            .zip(b)
             .map(|(x, y)| x ^ y)
             .fold(0, |sum, next| sum | next)
             .eq(&0)
