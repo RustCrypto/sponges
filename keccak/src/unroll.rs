@@ -1,5 +1,4 @@
-#![allow(missing_docs)]
-
+/// unroll5
 #[cfg(not(feature = "no_unroll"))]
 #[macro_export]
 macro_rules! unroll5 {
@@ -12,6 +11,7 @@ macro_rules! unroll5 {
     };
 }
 
+/// unroll5
 #[cfg(feature = "no_unroll")]
 #[macro_export]
 macro_rules! unroll5 {
@@ -20,6 +20,7 @@ macro_rules! unroll5 {
     }
 }
 
+/// unroll24
 #[cfg(not(feature = "no_unroll"))]
 #[macro_export]
 macro_rules! unroll24 {
@@ -51,6 +52,7 @@ macro_rules! unroll24 {
     };
 }
 
+/// unroll24
 #[cfg(feature = "no_unroll")]
 #[macro_export]
 macro_rules! unroll24 {
