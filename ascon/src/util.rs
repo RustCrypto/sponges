@@ -15,15 +15,3 @@ pub fn u64_to_u8(input: &[u64], output: &mut [u8]) {
         Endian::write_u64(&mut output[(i * 8)..((i + 1) * 8)], b)
     }
 }
-
-pub fn eq(a: &[u8], b: &[u8]) -> bool {
-    if a.len() != b.len() {
-        false
-    } else {
-        a.iter()
-            .zip(b)
-            .map(|(x, y)| x ^ y)
-            .fold(0, |sum, next| sum | next)
-            .eq(&0)
-    }
-}
