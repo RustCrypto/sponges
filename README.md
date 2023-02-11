@@ -8,6 +8,7 @@ Collection of [sponge functions] written in pure Rust.
 
 | Crate      | Algorithm  | Crates.io | Documentation |
 |------------|------------|-----------|---------------|
+| [`ascon`]  | [Ascon]    | [![crates.io](https://img.shields.io/crates/v/ascon.svg)](https://crates.io/crates/ascon) | [![Documentation](https://docs.rs/ascon/badge.svg)](https://docs.rs/ascon) |
 | [`keccak`] | [Keccak]   | [![crates.io](https://img.shields.io/crates/v/keccak.svg)](https://crates.io/crates/keccak) | [![Documentation](https://docs.rs/keccak/badge.svg)](https://docs.rs/keccak) |
 
 ## License
@@ -33,9 +34,11 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 
 [//]: # (crates)
 
+[`ascon`]: ./ascon
 [`keccak`]: ./keccak
 
 [//]: # (algorithms)
 
 [sponge functions]: https://en.wikipedia.org/wiki/Sponge_function
+[Ascon]: https://ascon.iaik.tugraz.at/
 [Keccak]: https://en.wikipedia.org/wiki/BLAKE_(hash_function)#BLAKE2
