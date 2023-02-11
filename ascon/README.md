@@ -1,7 +1,69 @@
-ASCON
------
+# [RustCrypto]: Ascon
 
-A implementation of [ASCON](http://ascon.iaik.tugraz.at) authenticated encryption.
+[![crate][crate-image]][crate-link]
+[![Docs][docs-image]][docs-link]
+[![Build Status][build-image]][build-link]
+![Apache2/MIT licensed][license-image]
+![Rust Version][rustc-image]
+[![Project Chat][chat-image]][chat-link]
 
-* [CAESAR competition](http://competitions.cr.yp.to/caesar.html)
-* [Ascon Analysis](http://ascon.iaik.tugraz.at/analysis.html)
+Pure Rust implementation of [Ascon], a family of authenticated encryption and
+hashing algorithms designed to be lightweight and easy to implement.
+
+[Documentation][docs-link]
+
+## About
+
+Ascon is a family of lightweight algorithms built on a core permutation
+algorithm. These algorithms include:
+
+- Authenticated Encryption with Associated Data (AEAD)
+- Hash functions (HASH) and extendible-output functions (XOF)
+- Pseudo-random functions (PRF) and message authentication codes (MAC)
+
+Ascon has been selected as [new standard for lightweight cryptography] in the
+[NIST Lightweight Cryptography] competition, and has also been selected as the
+primary choice for lightweight authenticated encryption in the final
+portfolio of the [CAESAR competition].
+
+## Minimum Supported Rust Version
+
+This crate requires **Rust 1.41** at a minimum.
+
+We may change the MSRV in the future, but it will be accompanied by a minor
+version bump.
+
+## License
+
+Licensed under either of:
+
+- [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0)
+- [MIT license](http://opensource.org/licenses/MIT)
+
+at your option.
+
+### Contribution
+
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
+dual licensed as above, without any additional terms or conditions.
+
+[//]: # (badges)
+
+[crate-image]: https://buildstats.info/crate/ascon
+[crate-link]: https://crates.io/crates/ascon
+[docs-image]: https://docs.rs/ascon/badge.svg
+[docs-link]: https://docs.rs/ascon/
+[build-image]: https://github.com/RustCrypto/sponges/actions/workflows/ascon.yml/badge.svg
+[build-link]: https://github.com/RustCrypto/sponges/actions/workflows/ascon.yml
+[license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
+[rustc-image]: https://img.shields.io/badge/rustc-1.41+-blue.svg
+[chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
+[chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/369879-sponges
+
+[//]: # (links)
+
+[RustCrypto]: https://github.com/rustcrypto
+[New standard for lightweight cryptography]: https://www.nist.gov/news-events/news/2023/02/nist-selects-lightweight-cryptography-algorithms-protect-small-devices
+[NIST Lightweight Cryptography]: https://csrc.nist.gov/projects/lightweight-cryptography/finalists
+[CAESAR competition]: https://competitions.cr.yp.to/caesar-submissions.html
