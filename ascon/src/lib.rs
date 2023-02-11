@@ -33,175 +33,100 @@
     unused_qualifications
 )]
 
-mod ops;
+pub mod aead;
+
 mod util;
 
-use crate::ops::{finalization, initialization, permutation, process_aad};
+use crate::util::{u64_to_u8, u8_to_u64};
 
+/// Key length.
 const KEY_LEN: usize = 16;
+
+/// State size.
 const S_SIZE: usize = 320 / 8;
+
+/// Rate: Sᵣ.
 const RATE: usize = 128 / 8;
+
+/// Ascon(a,b) a-parameter.
 const A: usize = 12;
+
+/// Ascon(a,b) b-parameter.
 const B: usize = 8;
 
-/// Decryption errors.
-#[derive(Debug)]
-pub enum DecryptFail {
-    /// Invalid tag length.
-    TagLengthError,
+/// Ascon permutation.
+pub fn permutation(s: &mut [u8], start: usize, rounds: usize) {
+    let mut x = [0; 5];
+    let mut t = [0; 5];
+    u8_to_u64(s, &mut x);
 
-    /// Authentication failure (invalid tag).
-    AuthenticationFail,
+    for i in start as u64..(start + rounds) as u64 {
+        x[2] ^= ((0xfu64 - i) << 4) | i;
+
+        x[0] ^= x[4];
+        x[4] ^= x[3];
+        x[2] ^= x[1];
+        t[0] = x[0];
+        t[1] = x[1];
+        t[2] = x[2];
+        t[3] = x[3];
+        t[4] = x[4];
+        t[0] = !t[0];
+        t[1] = !t[1];
+        t[2] = !t[2];
+        t[3] = !t[3];
+        t[4] = !t[4];
+        t[0] &= x[1];
+        t[1] &= x[2];
+        t[2] &= x[3];
+        t[3] &= x[4];
+        t[4] &= x[0];
+        x[0] ^= t[1];
+        x[1] ^= t[2];
+        x[2] ^= t[3];
+        x[3] ^= t[4];
+        x[4] ^= t[0];
+        x[1] ^= x[0];
+        x[0] ^= x[4];
+        x[3] ^= x[2];
+        x[2] = !x[2];
+
+        x[0] ^= x[0].rotate_right(19) ^ x[0].rotate_right(28);
+        x[1] ^= x[1].rotate_right(61) ^ x[1].rotate_right(39);
+        x[2] ^= x[2].rotate_right(1) ^ x[2].rotate_right(6);
+        x[3] ^= x[3].rotate_right(10) ^ x[3].rotate_right(17);
+        x[4] ^= x[4].rotate_right(7) ^ x[4].rotate_right(41);
+    }
+
+    u64_to_u8(&x, s);
 }
 
-/// AEAD encryption.
-pub fn aead_encrypt(key: &[u8], iv: &[u8], message: &[u8], aad: &[u8]) -> (Vec<u8>, [u8; KEY_LEN]) {
-    let s = aad.len() / RATE + 1;
-    let t = message.len() / RATE + 1;
-    let l = message.len() % RATE;
+/// Initialize Ascon permutation.
+pub fn initialization(s: &mut [u8], key: &[u8], nonce: &[u8]) {
+    s[0] = KEY_LEN as u8 * 8;
+    s[1] = RATE as u8 * 8;
+    s[2] = A as u8;
+    s[3] = B as u8;
 
-    let mut ss = [0; S_SIZE];
-    let mut aa = vec![0; s * RATE];
-    let mut mm = vec![0; t * RATE];
+    let mut pos = S_SIZE - 2 * KEY_LEN;
+    s[pos..pos + key.len()].copy_from_slice(key);
+    pos += KEY_LEN;
+    s[pos..pos + nonce.len()].copy_from_slice(nonce);
 
-    let mut output = vec![0; message.len()];
-    let mut tag = [0; KEY_LEN];
+    permutation(s, 12 - A, A);
 
-    // pad aad
-    aa[..aad.len()].copy_from_slice(aad);
-    aa[aad.len()] = 0x80;
-    // pad message
-    mm[..message.len()].copy_from_slice(message);
-    mm[message.len()] = 0x80;
-
-    // init
-    initialization(&mut ss, key, iv);
-
-    // aad
-    if !aad.is_empty() {
-        process_aad(&mut ss, &aa, s);
-    }
-    ss[S_SIZE - 1] ^= 1;
-
-    // plaintext
-    for i in 0..(t - 1) {
-        for j in 0..RATE {
-            ss[j] ^= mm[i * RATE + j];
-        }
-        output[(i * RATE)..(i * RATE + RATE)].copy_from_slice(&ss[..RATE]);
-        permutation(&mut ss, 12 - B, B);
-    }
-    for j in 0..RATE {
-        ss[j] ^= mm[(t - 1) * RATE + j];
-    }
-    for j in 0..l {
-        output[(t - 1) * RATE + j] = ss[j];
-    }
-
-    // finalization
-    finalization(&mut ss, key);
-
-    // tag
-    tag.copy_from_slice(&ss[S_SIZE - KEY_LEN..]);
-
-    (output, tag)
-}
-
-/// AEAD decryption.
-pub fn aead_decrypt(
-    key: &[u8],
-    iv: &[u8],
-    ciphertext: &[u8],
-    aad: &[u8],
-    tag: &[u8],
-) -> Result<Vec<u8>, DecryptFail> {
-    if tag.len() != KEY_LEN {
-        Err(DecryptFail::TagLengthError)?
-    };
-
-    let s = aad.len() / RATE + 1;
-    let t = ciphertext.len() / RATE + 1;
-    let l = ciphertext.len() % RATE;
-
-    let mut ss = [0; S_SIZE];
-    let mut aa = vec![0; s * RATE];
-    let mut mm = vec![0; t * RATE];
-
-    // pad aad
-    aa[..aad.len()].copy_from_slice(aad);
-    aa[aad.len()] = 0x80;
-
-    // init
-    initialization(&mut ss, key, iv);
-
-    // aad
-    if !aad.is_empty() {
-        process_aad(&mut ss, &aa, s);
-    }
-    ss[S_SIZE - 1] ^= 1;
-
-    // ciphertext
-    for i in 0..(t - 1) {
-        for j in 0..RATE {
-            mm[i * RATE + j] = ss[j] ^ ciphertext[i * RATE + j];
-        }
-        ss[..RATE].copy_from_slice(&ciphertext[(i * RATE)..(i * RATE + RATE)]);
-        permutation(&mut ss, 12 - B, B);
-    }
-    for j in 0..l {
-        mm[(t - 1) * RATE + j] = ss[j] ^ ciphertext[(t - 1) * RATE + j];
-    }
-    for j in 0..l {
-        ss[j] = ciphertext[(t - 1) * RATE + j];
-    }
-    ss[l] ^= 0x80;
-
-    // finalization
-    finalization(&mut ss, key);
-
-    if util::eq(&ss[S_SIZE - KEY_LEN..], tag) {
-        Ok(mm[..ciphertext.len()].into())
-    } else {
-        Err(DecryptFail::AuthenticationFail)
+    for (i, &b) in key.iter().enumerate() {
+        s[pos + i] ^= b;
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::{aead_decrypt, aead_encrypt};
-    use crate::util;
-
-    #[test]
-    fn ascon_test() {
-        let key = [0; 16];
-        let iv = [0; 16];
-        let aad = [0; 16];
-        let message = [0; 64];
-
-        let (ciphertext, tag) = aead_encrypt(&key, &iv, &message, &aad);
-        let plaintext = aead_decrypt(&key, &iv, &ciphertext, &aad, &tag).unwrap();
-        assert_eq!(plaintext, &message[..]);
-        assert!(util::eq(&message, &plaintext));
+/// Finalize Ascon permutation.
+pub fn finalization(s: &mut [u8], key: &[u8]) {
+    for (i, &b) in key.iter().enumerate() {
+        s[RATE + i] ^= b;
     }
-
-    #[test]
-    fn ascon_tv_test() {
-        let key = [0; 16];
-        let iv = [0; 16];
-        let aad = b"ASCON";
-        let message = b"ascon";
-
-        let (ciphertext, tag) = aead_encrypt(&key, &iv, message, aad);
-        assert_eq!(ciphertext, [0x4c, 0x8c, 0x42, 0x89, 0x49]);
-        assert_eq!(
-            tag,
-            [
-                0x65, 0xfd, 0x17, 0xb6, 0xd3, 0x0c, 0xd8, 0x76, 0xa0, 0x5a, 0x8e, 0xfc, 0xec, 0xad,
-                0x99, 0x3a
-            ]
-        );
-
-        let plaintext = aead_decrypt(&key, &iv, &ciphertext, aad, &tag).unwrap();
-        assert_eq!(plaintext, message);
+    permutation(s, 12 - A, A);
+    for (i, &b) in key.iter().enumerate() {
+        s[S_SIZE - KEY_LEN + i] ^= b;
     }
 }
