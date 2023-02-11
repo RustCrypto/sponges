@@ -12,6 +12,7 @@ repository = "https://github.com/RustCrypto/sponges/tree/master/keccak"
 keywords = ["crypto", "sponge", "keccak", "keccak-f", "keccak-p"]
 categories = ["cryptography", "no-std"]
 readme = "README.md"
+edition = "2018"
 
 [features]
 asm = []       # Use optimized assembly when available (currently only ARMv8)

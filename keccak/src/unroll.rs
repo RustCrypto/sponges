@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+
 #[cfg(not(feature = "no_unroll"))]
 #[macro_export]
 macro_rules! unroll5 {
