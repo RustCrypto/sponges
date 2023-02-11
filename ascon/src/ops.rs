@@ -1,4 +1,7 @@
-use util::{u64_to_u8, u8_to_u64};
+use crate::{
+    util::{u64_to_u8, u8_to_u64},
+    A, B, KEY_LEN, RATE, S_SIZE,
+};
 
 pub fn permutation(s: &mut [u8], start: usize, rounds: usize) {
     let mut x = [0; 5];
@@ -47,17 +50,17 @@ pub fn permutation(s: &mut [u8], start: usize, rounds: usize) {
 }
 
 pub fn initialization(s: &mut [u8], key: &[u8], nonce: &[u8]) {
-    s[0] = ::KEY_LEN as u8 * 8;
-    s[1] = ::RATE as u8 * 8;
-    s[2] = ::A as u8;
-    s[3] = ::B as u8;
+    s[0] = KEY_LEN as u8 * 8;
+    s[1] = RATE as u8 * 8;
+    s[2] = A as u8;
+    s[3] = B as u8;
 
-    let mut pos = ::S_SIZE - 2 * ::KEY_LEN;
+    let mut pos = S_SIZE - 2 * KEY_LEN;
     s[pos..pos + key.len()].copy_from_slice(key);
-    pos += ::KEY_LEN;
+    pos += KEY_LEN;
     s[pos..pos + nonce.len()].copy_from_slice(nonce);
 
-    permutation(s, 12 - ::A, ::A);
+    permutation(s, 12 - A, A);
 
     for (i, &b) in key.iter().enumerate() {
         s[pos + i] ^= b;
@@ -66,19 +69,19 @@ pub fn initialization(s: &mut [u8], key: &[u8], nonce: &[u8]) {
 
 pub fn finalization(s: &mut [u8], key: &[u8]) {
     for (i, &b) in key.iter().enumerate() {
-        s[::RATE + i] ^= b;
+        s[RATE + i] ^= b;
     }
-    permutation(s, 12 - ::A, ::A);
+    permutation(s, 12 - A, A);
     for (i, &b) in key.iter().enumerate() {
-        s[::S_SIZE - ::KEY_LEN + i] ^= b;
+        s[S_SIZE - KEY_LEN + i] ^= b;
     }
 }
 
 pub fn process_aad(ss: &mut [u8], aa: &[u8], s: usize) {
     for i in 0..s {
-        for j in 0..::RATE {
-            ss[j] ^= aa[i * ::RATE + j];
+        for j in 0..RATE {
+            ss[j] ^= aa[i * RATE + j];
         }
-        permutation(ss, 12 - ::B, ::B);
+        permutation(ss, 12 - B, B);
     }
 }

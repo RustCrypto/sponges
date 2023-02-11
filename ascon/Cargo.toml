@@ -1,10 +1,18 @@
 [package]
 name = "ascon"
-version = "0.1.4"
-authors = ["quininer kel <quininer@live.com>"]
-description = "A implementation of ASCON authenticated encryption."
-repository = "https://github.com/quininer/ascon"
+version = "0.2.0-pre"
+description = """
+Pure Rust implementation of Ascon, a family of authenticated encryption and
+hashing algorithms designed to be lightweight and easy to implement
+"""
+authors = ["quininer kel <quininer@live.com>", "RustCrypto Developers"]
 license = "Apache-2.0 OR MIT"
+documentation = "https://docs.rs/ascon"
+repository = "https://github.com/RustCrypto/sponges/tree/master/ascon"
+keywords = ["crypto", "sponge"]
+categories = ["cryptography", "no-std"]
+readme = "README.md"
+edition = "2018"
 
 [dependencies]
 byteorder = { version = "1.0", default-features = false }

@@ -1,9 +1,42 @@
-extern crate byteorder;
+//! Pure Rust implementation of [Ascon], a family of authenticated encryption and
+//! hashing algorithms designed to be lightweight and easy to implement.
+//!
+//! ## About
+//!
+//! Ascon is a family of lightweight algorithms built on a core permutation
+//! algorithm. These algorithms include:
+//!
+//! - Authenticated Encryption with Associated Data (AEAD)
+//! - Hash functions (HASH) and extendible-output functions (XOF)
+//! - Pseudo-random functions (PRF) and message authentication codes (MAC)
+//!
+//! Ascon has been selected as [new standard for lightweight cryptography] in the
+//! [NIST Lightweight Cryptography] competition, and has also been selected as the
+//! primary choice for lightweight authenticated encryption in the final
+//! portfolio of the [CAESAR competition].
+//!
+//! [Ascon]: https://ascon.iaik.tugraz.at/
+//! [New standard for lightweight cryptography]: https://www.nist.gov/news-events/news/2023/02/nist-selects-lightweight-cryptography-algorithms-protect-small-devices
+//! [NIST Lightweight Cryptography]: https://csrc.nist.gov/projects/lightweight-cryptography/finalists
+//! [CAESAR competition]: https://competitions.cr.yp.to/caesar-submissions.html
+
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
+    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg"
+)]
+#![warn(
+    clippy::mod_module_files,
+    clippy::unwrap_used,
+    missing_docs,
+    rust_2018_idioms,
+    unused_lifetimes,
+    unused_qualifications
+)]
 
 mod ops;
 mod util;
 
-use ops::{finalization, initialization, permutation, process_aad};
+use crate::ops::{finalization, initialization, permutation, process_aad};
 
 const KEY_LEN: usize = 16;
 const S_SIZE: usize = 320 / 8;
@@ -11,12 +44,17 @@ const RATE: usize = 128 / 8;
 const A: usize = 12;
 const B: usize = 8;
 
+/// Decryption errors.
 #[derive(Debug)]
 pub enum DecryptFail {
+    /// Invalid tag length.
     TagLengthError,
+
+    /// Authentication failure (invalid tag).
     AuthenticationFail,
 }
 
+/// AEAD encryption.
 pub fn aead_encrypt(key: &[u8], iv: &[u8], message: &[u8], aad: &[u8]) -> (Vec<u8>, [u8; KEY_LEN]) {
     let s = aad.len() / RATE + 1;
     let t = message.len() / RATE + 1;
@@ -69,6 +107,7 @@ pub fn aead_encrypt(key: &[u8], iv: &[u8], message: &[u8], aad: &[u8]) -> (Vec<u
     (output, tag)
 }
 
+/// AEAD decryption.
 pub fn aead_decrypt(
     key: &[u8],
     iv: &[u8],
@@ -127,36 +166,42 @@ pub fn aead_decrypt(
     }
 }
 
-#[test]
-fn ascon_test() {
-    let key = [0; 16];
-    let iv = [0; 16];
-    let aad = [0; 16];
-    let message = [0; 64];
+#[cfg(test)]
+mod tests {
+    use super::{aead_decrypt, aead_encrypt};
+    use crate::util;
 
-    let (ciphertext, tag) = aead_encrypt(&key, &iv, &message, &aad);
-    let plaintext = aead_decrypt(&key, &iv, &ciphertext, &aad, &tag).unwrap();
-    assert_eq!(plaintext, &message[..]);
-    assert!(util::eq(&message, &plaintext));
-}
+    #[test]
+    fn ascon_test() {
+        let key = [0; 16];
+        let iv = [0; 16];
+        let aad = [0; 16];
+        let message = [0; 64];
 
-#[test]
-fn ascon_tv_test() {
-    let key = [0; 16];
-    let iv = [0; 16];
-    let aad = b"ASCON";
-    let message = b"ascon";
+        let (ciphertext, tag) = aead_encrypt(&key, &iv, &message, &aad);
+        let plaintext = aead_decrypt(&key, &iv, &ciphertext, &aad, &tag).unwrap();
+        assert_eq!(plaintext, &message[..]);
+        assert!(util::eq(&message, &plaintext));
+    }
 
-    let (ciphertext, tag) = aead_encrypt(&key, &iv, message, aad);
-    assert_eq!(ciphertext, [0x4c, 0x8c, 0x42, 0x89, 0x49]);
-    assert_eq!(
-        tag,
-        [
-            0x65, 0xfd, 0x17, 0xb6, 0xd3, 0x0c, 0xd8, 0x76, 0xa0, 0x5a, 0x8e, 0xfc, 0xec, 0xad,
-            0x99, 0x3a
-        ]
-    );
+    #[test]
+    fn ascon_tv_test() {
+        let key = [0; 16];
+        let iv = [0; 16];
+        let aad = b"ASCON";
+        let message = b"ascon";
 
-    let plaintext = aead_decrypt(&key, &iv, &ciphertext, aad, &tag).unwrap();
-    assert_eq!(plaintext, message);
+        let (ciphertext, tag) = aead_encrypt(&key, &iv, message, aad);
+        assert_eq!(ciphertext, [0x4c, 0x8c, 0x42, 0x89, 0x49]);
+        assert_eq!(
+            tag,
+            [
+                0x65, 0xfd, 0x17, 0xb6, 0xd3, 0x0c, 0xd8, 0x76, 0xa0, 0x5a, 0x8e, 0xfc, 0xec, 0xad,
+                0x99, 0x3a
+            ]
+        );
+
+        let plaintext = aead_decrypt(&key, &iv, &ciphertext, aad, &tag).unwrap();
+        assert_eq!(plaintext, message);
+    }
 }
