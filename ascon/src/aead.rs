@@ -1,6 +1,7 @@
 //! Authenticated Encryption with Associated Data.
 
-use crate::{finalization, initialization, permutation, util, B, KEY_LEN, RATE, S_SIZE};
+use crate::{finalization, initialization, permutation, B, KEY_LEN, RATE, S_SIZE};
+use alloc::{vec, vec::Vec};
 
 /// Decryption errors.
 #[derive(Debug)]
@@ -117,10 +118,23 @@ pub fn decrypt(
     // finalization
     finalization(&mut ss, key);
 
-    if util::eq(&ss[S_SIZE - KEY_LEN..], tag) {
+    if ct_eq(&ss[S_SIZE - KEY_LEN..], tag) {
         Ok(mm[..ciphertext.len()].into())
     } else {
         Err(DecryptFail::AuthenticationFail)
+    }
+}
+
+// TODO(tarcieri): use `subtle`
+fn ct_eq(a: &[u8], b: &[u8]) -> bool {
+    if a.len() != b.len() {
+        false
+    } else {
+        a.iter()
+            .zip(b)
+            .map(|(x, y)| x ^ y)
+            .fold(0, |sum, next| sum | next)
+            .eq(&0)
     }
 }
 
@@ -136,7 +150,6 @@ fn process_aad(ss: &mut [u8], aa: &[u8], s: usize) {
 #[cfg(test)]
 mod tests {
     use super::{decrypt, encrypt};
-    use crate::util;
 
     #[test]
     fn round_trip() {
@@ -148,7 +161,6 @@ mod tests {
         let (ciphertext, tag) = encrypt(&key, &iv, &message, &aad);
         let plaintext = decrypt(&key, &iv, &ciphertext, &aad, &tag).unwrap();
         assert_eq!(plaintext, &message[..]);
-        assert!(util::eq(&message, &plaintext));
     }
 
     #[test]

@@ -20,6 +20,7 @@
 //! [NIST Lightweight Cryptography]: https://csrc.nist.gov/projects/lightweight-cryptography/finalists
 //! [CAESAR competition]: https://competitions.cr.yp.to/caesar-submissions.html
 
+#![no_std]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg"
@@ -33,6 +34,10 @@
     unused_qualifications
 )]
 
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
+#[cfg(feature = "alloc")]
 pub mod aead;
 
 mod util;
