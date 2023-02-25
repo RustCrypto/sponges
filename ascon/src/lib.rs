@@ -41,9 +41,7 @@ extern crate alloc;
 #[cfg(feature = "alloc")]
 pub mod aead;
 
-mod util;
-
-use crate::util::{u64_to_u8, u8_to_u64};
+use core::convert::TryInto;
 
 /// Key length.
 const KEY_LEN: usize = 16;
@@ -64,7 +62,11 @@ const B: usize = 8;
 pub fn permutation(s: &mut [u8], start: usize, rounds: usize) {
     let mut x = [0; 5];
     let mut t = [0; 5];
-    u8_to_u64(s, &mut x);
+
+    #[allow(clippy::unwrap_used)]
+    for (i, b) in x.iter_mut().enumerate() {
+        *b = u64::from_be_bytes(s[(i * 8)..((i + 1) * 8)].try_into().unwrap());
+    }
 
     for i in start as u64..(start + rounds) as u64 {
         x[2] ^= ((0xfu64 - i) << 4) | i;
@@ -104,7 +106,9 @@ pub fn permutation(s: &mut [u8], start: usize, rounds: usize) {
         x[4] ^= x[4].rotate_right(7) ^ x[4].rotate_right(41);
     }
 
-    u64_to_u8(&x, s);
+    for (i, &b) in x.iter().enumerate() {
+        s[(i * 8)..((i + 1) * 8)].copy_from_slice(&b.to_be_bytes())
+    }
 }
 
 /// Initialize Ascon permutation.
