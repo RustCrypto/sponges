@@ -14,9 +14,6 @@ categories = ["cryptography", "no-std"]
 readme = "README.md"
 edition = "2018"
 
-[dependencies]
-byteorder = { version = "1.0", default-features = false }
-
 [features]
 default = ["alloc"]
 alloc = []
