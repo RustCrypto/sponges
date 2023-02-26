@@ -1,6 +1,6 @@
 //! Authenticated Encryption with Associated Data.
 
-use crate::{Ascon, Key, KEY_SIZE, RATE, S_SIZE};
+use crate::{Ascon, Key, Nonce, KEY_SIZE, RATE, S_SIZE};
 use alloc::{vec, vec::Vec};
 
 /// Ascon(a,b) `b`-parameter.
@@ -23,7 +23,7 @@ pub enum DecryptFail {
 }
 
 /// AEAD encryption.
-pub fn encrypt(key: &Key, iv: &[u8], message: &[u8], aad: &[u8]) -> (Vec<u8>, Tag) {
+pub fn encrypt(key: &Key, nonce: &Nonce, message: &[u8], aad: &[u8]) -> (Vec<u8>, Tag) {
     let s = aad.len() / RATE + 1;
     let t = message.len() / RATE + 1;
     let l = message.len() % RATE;
@@ -42,7 +42,7 @@ pub fn encrypt(key: &Key, iv: &[u8], message: &[u8], aad: &[u8]) -> (Vec<u8>, Ta
     mm[message.len()] = 0x80;
 
     // init
-    let mut ss = Ascon::new(key, iv);
+    let mut ss = Ascon::new(key, nonce);
 
     // aad
     if !aad.is_empty() {
@@ -78,7 +78,7 @@ pub fn encrypt(key: &Key, iv: &[u8], message: &[u8], aad: &[u8]) -> (Vec<u8>, Ta
 /// AEAD decryption.
 pub fn decrypt(
     key: &Key,
-    iv: &[u8],
+    nonce: &Nonce,
     ciphertext: &[u8],
     aad: &[u8],
     tag: &[u8],
@@ -99,7 +99,7 @@ pub fn decrypt(
     aa[aad.len()] = 0x80;
 
     // init
-    let mut ss = Ascon::new(key, iv);
+    let mut ss = Ascon::new(key, nonce);
 
     // aad
     if !aad.is_empty() {
