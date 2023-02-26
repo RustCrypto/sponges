@@ -1,6 +1,6 @@
 [package]
 name = "ascon"
-version = "0.2.0-pre"
+version = "0.2.0"
 description = """
 Pure Rust implementation of Ascon, a family of authenticated encryption and
 hashing algorithms designed to be lightweight and easy to implement
@@ -9,7 +9,7 @@ authors = ["quininer kel <quininer@live.com>", "RustCrypto Developers"]
 license = "Apache-2.0 OR MIT"
 documentation = "https://docs.rs/ascon"
 repository = "https://github.com/RustCrypto/sponges/tree/master/ascon"
-keywords = ["crypto", "sponge"]
+keywords = ["aead", "crypto", "sponge"]
 categories = ["cryptography", "no-std"]
 readme = "README.md"
 edition = "2021"
