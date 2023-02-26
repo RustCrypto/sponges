@@ -17,9 +17,9 @@ hashing algorithms designed to be lightweight and easy to implement.
 Ascon is a family of lightweight algorithms built on a core permutation
 algorithm. These algorithms include:
 
-- Authenticated Encryption with Associated Data (AEAD)
-- Hash functions (HASH) and extendible-output functions (XOF)
-- Pseudo-random functions (PRF) and message authentication codes (MAC)
+- [x] Authenticated Encryption with Associated Data (AEAD)
+- [ ] Hash functions (HASH) and extendible-output functions (XOF)
+- [ ] Pseudo-random functions (PRF) and message authentication codes (MAC)
 
 Ascon has been selected as [new standard for lightweight cryptography] in the
 [NIST Lightweight Cryptography] competition, and has also been selected as the
