@@ -22,8 +22,8 @@ pub mod aead;
 
 use core::convert::TryInto;
 
-/// Key length.
-const KEY_LEN: usize = 16;
+/// Size of an Ascon key in bytes.
+const KEY_SIZE: usize = 16;
 
 /// State size in bits.
 const S_BITS: usize = 320;
@@ -34,24 +34,31 @@ const S_SIZE: usize = S_BITS / 8;
 /// Rate: Sᵣ.
 const RATE: usize = 128 / 8;
 
+/// Ascon permutation key.
+pub type Key = [u8; KEY_SIZE];
+
+/// Ascon permutation state.
+type State = [u8; S_SIZE];
+
 /// Ascon(a,b) permutation.
 pub struct Ascon<const A: usize = 12, const B: usize = 8> {
-    state: [u8; S_SIZE],
+    key: Key,
+    state: State,
 }
 
 impl<const A: usize, const B: usize> Ascon<A, B> {
     /// Initialize Ascon permutation.
     // TODO(tarcieri): validate length of key and nonce
-    pub fn new(key: &[u8], nonce: &[u8]) -> Self {
+    pub fn new(key: &Key, nonce: &[u8]) -> Self {
         let mut state = [0; S_SIZE];
-        state[0] = KEY_LEN as u8 * 8;
+        state[0] = KEY_SIZE as u8 * 8;
         state[1] = RATE as u8 * 8;
         state[2] = A as u8;
         state[3] = B as u8;
 
-        let mut pos = S_SIZE - 2 * KEY_LEN;
+        let mut pos = S_SIZE - 2 * KEY_SIZE;
         state[pos..pos + key.len()].copy_from_slice(key);
-        pos += KEY_LEN;
+        pos += KEY_SIZE;
         state[pos..pos + nonce.len()].copy_from_slice(nonce);
 
         permutation(&mut state, 12 - A, A);
@@ -60,7 +67,7 @@ impl<const A: usize, const B: usize> Ascon<A, B> {
             state[pos + i] ^= b;
         }
 
-        Self { state }
+        Self { key: *key, state }
     }
 
     /// Perform Ascon permutation on internal state.
@@ -71,17 +78,17 @@ impl<const A: usize, const B: usize> Ascon<A, B> {
     /// Finalize Ascon permutation.
     #[inline(always)]
     #[must_use]
-    pub fn finalize(self, key: &[u8]) -> [u8; S_SIZE] {
+    pub fn finalize(self) -> [u8; S_SIZE] {
         let mut s = self.state;
 
-        for (i, &b) in key.iter().enumerate() {
+        for (i, &b) in self.key.iter().enumerate() {
             s[RATE + i] ^= b;
         }
 
         permutation(&mut s, 12 - A, A);
 
-        for (i, &b) in key.iter().enumerate() {
-            s[S_SIZE - KEY_LEN + i] ^= b;
+        for (i, &b) in self.key.iter().enumerate() {
+            s[S_SIZE - KEY_SIZE + i] ^= b;
         }
 
         s
