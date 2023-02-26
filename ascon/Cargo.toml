@@ -12,7 +12,8 @@ repository = "https://github.com/RustCrypto/sponges/tree/master/ascon"
 keywords = ["crypto", "sponge"]
 categories = ["cryptography", "no-std"]
 readme = "README.md"
-edition = "2018"
+edition = "2021"
+rust-version = "1.59"
 
 [features]
 default = ["alloc"]
