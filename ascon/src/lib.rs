@@ -46,20 +46,71 @@ use core::convert::TryInto;
 /// Key length.
 const KEY_LEN: usize = 16;
 
+/// State size in bits.
+const S_BITS: usize = 320;
+
 /// State size.
-const S_SIZE: usize = 320 / 8;
+const S_SIZE: usize = S_BITS / 8;
 
 /// Rate: Sᵣ.
 const RATE: usize = 128 / 8;
 
-/// Ascon(a,b) a-parameter.
-const A: usize = 12;
+/// Ascon(a,b) permutation.
+pub struct Ascon<const A: usize = 12, const B: usize = 8> {
+    state: [u8; S_SIZE],
+}
 
-/// Ascon(a,b) b-parameter.
-const B: usize = 8;
+impl<const A: usize, const B: usize> Ascon<A, B> {
+    /// Initialize Ascon permutation.
+    // TODO(tarcieri): validate length of key and nonce
+    pub fn new(key: &[u8], nonce: &[u8]) -> Self {
+        let mut state = [0; S_SIZE];
+        state[0] = KEY_LEN as u8 * 8;
+        state[1] = RATE as u8 * 8;
+        state[2] = A as u8;
+        state[3] = B as u8;
+
+        let mut pos = S_SIZE - 2 * KEY_LEN;
+        state[pos..pos + key.len()].copy_from_slice(key);
+        pos += KEY_LEN;
+        state[pos..pos + nonce.len()].copy_from_slice(nonce);
+
+        permutation(&mut state, 12 - A, A);
+
+        for (i, &b) in key.iter().enumerate() {
+            state[pos + i] ^= b;
+        }
+
+        Self { state }
+    }
+
+    /// Perform Ascon permutation on internal state.
+    pub fn permutation(&mut self, start: usize, rounds: usize) {
+        permutation(&mut self.state, start, rounds);
+    }
+
+    /// Finalize Ascon permutation.
+    #[inline(always)]
+    #[must_use]
+    pub fn finalize(self, key: &[u8]) -> [u8; S_SIZE] {
+        let mut s = self.state;
+
+        for (i, &b) in key.iter().enumerate() {
+            s[RATE + i] ^= b;
+        }
+
+        permutation(&mut s, 12 - A, A);
+
+        for (i, &b) in key.iter().enumerate() {
+            s[S_SIZE - KEY_LEN + i] ^= b;
+        }
+
+        s
+    }
+}
 
 /// Ascon permutation.
-pub fn permutation(s: &mut [u8], start: usize, rounds: usize) {
+fn permutation(s: &mut [u8], start: usize, rounds: usize) {
     let mut x = [0; 5];
     let mut t = [0; 5];
 
@@ -108,35 +159,5 @@ pub fn permutation(s: &mut [u8], start: usize, rounds: usize) {
 
     for (i, &b) in x.iter().enumerate() {
         s[(i * 8)..((i + 1) * 8)].copy_from_slice(&b.to_be_bytes())
-    }
-}
-
-/// Initialize Ascon permutation.
-pub fn initialization(s: &mut [u8], key: &[u8], nonce: &[u8]) {
-    s[0] = KEY_LEN as u8 * 8;
-    s[1] = RATE as u8 * 8;
-    s[2] = A as u8;
-    s[3] = B as u8;
-
-    let mut pos = S_SIZE - 2 * KEY_LEN;
-    s[pos..pos + key.len()].copy_from_slice(key);
-    pos += KEY_LEN;
-    s[pos..pos + nonce.len()].copy_from_slice(nonce);
-
-    permutation(s, 12 - A, A);
-
-    for (i, &b) in key.iter().enumerate() {
-        s[pos + i] ^= b;
-    }
-}
-
-/// Finalize Ascon permutation.
-pub fn finalization(s: &mut [u8], key: &[u8]) {
-    for (i, &b) in key.iter().enumerate() {
-        s[RATE + i] ^= b;
-    }
-    permutation(s, 12 - A, A);
-    for (i, &b) in key.iter().enumerate() {
-        s[S_SIZE - KEY_LEN + i] ^= b;
     }
 }
