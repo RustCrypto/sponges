@@ -1,26 +1,5 @@
-//! Pure Rust implementation of [Ascon], a family of authenticated encryption and
-//! hashing algorithms designed to be lightweight and easy to implement.
-//!
-//! ## About
-//!
-//! Ascon is a family of lightweight algorithms built on a core permutation
-//! algorithm. These algorithms include:
-//!
-//! - Authenticated Encryption with Associated Data (AEAD)
-//! - Hash functions (HASH) and extendible-output functions (XOF)
-//! - Pseudo-random functions (PRF) and message authentication codes (MAC)
-//!
-//! Ascon has been selected as [new standard for lightweight cryptography] in the
-//! [NIST Lightweight Cryptography] competition, and has also been selected as the
-//! primary choice for lightweight authenticated encryption in the final
-//! portfolio of the [CAESAR competition].
-//!
-//! [Ascon]: https://ascon.iaik.tugraz.at/
-//! [New standard for lightweight cryptography]: https://www.nist.gov/news-events/news/2023/02/nist-selects-lightweight-cryptography-algorithms-protect-small-devices
-//! [NIST Lightweight Cryptography]: https://csrc.nist.gov/projects/lightweight-cryptography/finalists
-//! [CAESAR competition]: https://competitions.cr.yp.to/caesar-submissions.html
-
 #![no_std]
+#![doc = include_str!("../README.md")]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg"
