@@ -13,11 +13,21 @@ keywords = ["crypto", "sponge"]
 categories = ["cryptography", "no-std"]
 readme = "README.md"
 edition = "2021"
-rust-version = "1.59"
+rust-version = "1.60"
+
+[dependencies]
+aead = { version = "0.5", optional = true, default-features = false }
+subtle = { version = "2", optional = true, default-features = false }
+
+[dev-dependencies]
+hex-literal = "0.3"
 
 [features]
-default = ["alloc"]
-alloc = []
+default = ["aead"]
+alloc = ["aead?/alloc"]
+std = ["aead?/std"]
+
+aead = ["dep:aead", "alloc", "subtle"] # TODO(tarcieri): remove alloc dependency
 
 [package.metadata.docs.rs]
 all-features = true

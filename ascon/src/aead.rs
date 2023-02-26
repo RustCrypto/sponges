@@ -1,156 +1,164 @@
 //! Authenticated Encryption with Associated Data.
 
-use crate::{Ascon, Key, Nonce, KEY_SIZE, RATE, S_SIZE};
-use alloc::{vec, vec::Vec};
+pub use ::aead::{self, AeadCore, AeadInPlace, Error, KeyInit, KeySizeUser};
 
-/// Ascon(a,b) `b`-parameter.
-const B: usize = 8;
+use crate::{Ascon, KEY_SIZE, RATE, S_SIZE};
+use ::aead::consts::{U0, U16};
 
-/// Tag length.
-const TAG_LEN: usize = 16;
+// TODO(tarcieri): remove hard dependency on alloc
+use alloc::vec;
 
-/// Authentication tag.
-type Tag = [u8; TAG_LEN];
+/// Ascon AEAD key.
+pub type Key = ::aead::generic_array::GenericArray<u8, U16>;
 
-/// Decryption errors.
-#[derive(Debug)]
-pub enum DecryptFail {
-    /// Invalid tag length.
-    TagLengthError,
+/// Ascon AEAD nonce.
+pub type Nonce = ::aead::generic_array::GenericArray<u8, U16>;
 
-    /// Authentication failure (invalid tag).
-    AuthenticationFail,
+/// Ascon AEAD authentication tag.
+pub type Tag = ::aead::generic_array::GenericArray<u8, U16>;
+
+/// Ascon AEAD encryption.
+#[derive(Clone)]
+pub struct AsconAead<const A: usize = 12, const B: usize = 8> {
+    key: Key,
 }
 
-/// AEAD encryption.
-pub fn encrypt(key: &Key, nonce: &Nonce, message: &[u8], aad: &[u8]) -> (Vec<u8>, Tag) {
-    let s = aad.len() / RATE + 1;
-    let t = message.len() / RATE + 1;
-    let l = message.len() % RATE;
+impl<const A: usize, const B: usize> KeySizeUser for AsconAead<A, B> {
+    type KeySize = U16;
+}
 
-    let mut aa = vec![0; s * RATE];
-    let mut mm = vec![0; t * RATE];
-
-    let mut output = vec![0; message.len()];
-
-    // pad aad
-    aa[..aad.len()].copy_from_slice(aad);
-    aa[aad.len()] = 0x80;
-
-    // pad message
-    mm[..message.len()].copy_from_slice(message);
-    mm[message.len()] = 0x80;
-
-    // init
-    let mut ss = Ascon::new(key, nonce);
-
-    // aad
-    if !aad.is_empty() {
-        process_aad(&mut ss, &aa, s);
+impl<const A: usize, const B: usize> KeyInit for AsconAead<A, B> {
+    fn new(key_bytes: &Key) -> Self {
+        Self { key: *key_bytes }
     }
+}
 
-    ss.state[S_SIZE - 1] ^= 1;
+impl<const A: usize, const B: usize> AeadCore for AsconAead<A, B> {
+    type NonceSize = U16;
+    type TagSize = U16;
+    type CiphertextOverhead = U0;
+}
 
-    // plaintext
-    for i in 0..(t - 1) {
-        for j in 0..RATE {
-            ss.state[j] ^= mm[i * RATE + j];
+impl<const A: usize, const B: usize> AeadInPlace for AsconAead<A, B> {
+    fn encrypt_in_place_detached(
+        &self,
+        nonce: &Nonce,
+        aad: &[u8],
+        buffer: &mut [u8],
+    ) -> Result<Tag, Error> {
+        let s = aad.len() / RATE + 1;
+        let t = buffer.len() / RATE + 1;
+        let l = buffer.len() % RATE;
+
+        let mut aa = vec![0; s * RATE];
+        let mut mm = vec![0; t * RATE];
+
+        // pad aad
+        aa[..aad.len()].copy_from_slice(aad);
+        aa[aad.len()] = 0x80;
+
+        // pad message
+        mm[..buffer.len()].copy_from_slice(buffer);
+        mm[buffer.len()] = 0x80;
+
+        // init
+        let mut ss = Ascon::<A, B>::new(self.key.as_ref(), nonce.as_ref());
+
+        // aad
+        if !aad.is_empty() {
+            process_aad(&mut ss, &aa, s);
         }
-        output[(i * RATE)..(i * RATE + RATE)].copy_from_slice(&ss.state[..RATE]);
-        ss.permutation(12 - B, B);
-    }
 
-    for j in 0..RATE {
-        ss.state[j] ^= mm[(t - 1) * RATE + j];
-    }
+        ss.state[S_SIZE - 1] ^= 1;
 
-    for j in 0..l {
-        output[(t - 1) * RATE + j] = ss.state[j];
-    }
-
-    // tag
-    let mut tag = Tag::default();
-    tag.copy_from_slice(&ss.finalize()[S_SIZE - KEY_SIZE..]);
-
-    (output, tag)
-}
-
-/// AEAD decryption.
-pub fn decrypt(
-    key: &Key,
-    nonce: &Nonce,
-    ciphertext: &[u8],
-    aad: &[u8],
-    tag: &[u8],
-) -> Result<Vec<u8>, DecryptFail> {
-    if tag.len() != KEY_SIZE {
-        Err(DecryptFail::TagLengthError)?
-    };
-
-    let s = aad.len() / RATE + 1;
-    let t = ciphertext.len() / RATE + 1;
-    let l = ciphertext.len() % RATE;
-
-    let mut aa = vec![0; s * RATE];
-    let mut mm = vec![0; t * RATE];
-
-    // pad aad
-    aa[..aad.len()].copy_from_slice(aad);
-    aa[aad.len()] = 0x80;
-
-    // init
-    let mut ss = Ascon::new(key, nonce);
-
-    // aad
-    if !aad.is_empty() {
-        process_aad(&mut ss, &aa, s);
-    }
-
-    ss.state[S_SIZE - 1] ^= 1;
-
-    // ciphertext
-    for i in 0..(t - 1) {
-        for j in 0..RATE {
-            mm[i * RATE + j] = ss.state[j] ^ ciphertext[i * RATE + j];
+        // plaintext
+        for i in 0..(t - 1) {
+            for j in 0..RATE {
+                ss.state[j] ^= mm[i * RATE + j];
+            }
+            buffer[(i * RATE)..(i * RATE + RATE)].copy_from_slice(&ss.state[..RATE]);
+            ss.permutation(12 - B, B);
         }
-        ss.state[..RATE].copy_from_slice(&ciphertext[(i * RATE)..(i * RATE + RATE)]);
-        ss.permutation(12 - B, B);
+
+        for j in 0..RATE {
+            ss.state[j] ^= mm[(t - 1) * RATE + j];
+        }
+
+        for j in 0..l {
+            buffer[(t - 1) * RATE + j] = ss.state[j];
+        }
+
+        // tag
+        let mut tag = Tag::default();
+        tag.copy_from_slice(&ss.finalize()[S_SIZE - KEY_SIZE..]);
+
+        Ok(tag)
     }
 
-    for j in 0..l {
-        mm[(t - 1) * RATE + j] = ss.state[j] ^ ciphertext[(t - 1) * RATE + j];
-    }
+    fn decrypt_in_place_detached(
+        &self,
+        nonce: &Nonce,
+        aad: &[u8],
+        buffer: &mut [u8],
+        tag: &Tag,
+    ) -> Result<(), Error> {
+        let s = aad.len() / RATE + 1;
+        let t = buffer.len() / RATE + 1;
+        let l = buffer.len() % RATE;
 
-    for j in 0..l {
-        ss.state[j] = ciphertext[(t - 1) * RATE + j];
-    }
+        let mut aa = vec![0; s * RATE];
+        let mut mm = vec![0; t * RATE];
 
-    ss.state[l] ^= 0x80;
+        // pad aad
+        aa[..aad.len()].copy_from_slice(aad);
+        aa[aad.len()] = 0x80;
 
-    // finalization
-    let expected_tag = ss.finalize();
+        // init
+        let mut ss = Ascon::<A, B>::new(self.key.as_ref(), nonce.as_ref());
 
-    if ct_eq(&expected_tag[S_SIZE - KEY_SIZE..], tag) {
-        Ok(mm[..ciphertext.len()].into())
-    } else {
-        Err(DecryptFail::AuthenticationFail)
+        // aad
+        if !aad.is_empty() {
+            process_aad(&mut ss, &aa, s);
+        }
+
+        ss.state[S_SIZE - 1] ^= 1;
+
+        // ciphertext
+        for i in 0..(t - 1) {
+            for j in 0..RATE {
+                mm[i * RATE + j] = ss.state[j] ^ buffer[i * RATE + j];
+            }
+            ss.state[..RATE].copy_from_slice(&buffer[(i * RATE)..(i * RATE + RATE)]);
+            ss.permutation(12 - B, B);
+        }
+
+        for j in 0..l {
+            mm[(t - 1) * RATE + j] = ss.state[j] ^ buffer[(t - 1) * RATE + j];
+        }
+
+        for j in 0..l {
+            ss.state[j] = buffer[(t - 1) * RATE + j];
+        }
+
+        ss.state[l] ^= 0x80;
+
+        // finalization
+        let expected_tag = ss.finalize();
+
+        use subtle::ConstantTimeEq;
+        if expected_tag[S_SIZE - KEY_SIZE..]
+            .ct_eq(tag.as_slice())
+            .into()
+        {
+            buffer.copy_from_slice(&mm[..buffer.len()]);
+            Ok(())
+        } else {
+            Err(Error)
+        }
     }
 }
 
-// TODO(tarcieri): use `subtle`
-fn ct_eq(a: &[u8], b: &[u8]) -> bool {
-    if a.len() != b.len() {
-        false
-    } else {
-        a.iter()
-            .zip(b)
-            .map(|(x, y)| x ^ y)
-            .fold(0, |sum, next| sum | next)
-            .eq(&0)
-    }
-}
-
-fn process_aad(ss: &mut Ascon, aa: &[u8], s: usize) {
+fn process_aad<const A: usize, const B: usize>(ss: &mut Ascon<A, B>, aa: &[u8], s: usize) {
     for i in 0..s {
         for j in 0..RATE {
             ss.state[j] ^= aa[i * RATE + j];
@@ -162,38 +170,50 @@ fn process_aad(ss: &mut Ascon, aa: &[u8], s: usize) {
 
 #[cfg(test)]
 mod tests {
-    use super::{decrypt, encrypt};
+    use super::{AeadInPlace, AsconAead, KeyInit};
+    use hex_literal::hex;
 
     #[test]
     fn round_trip() {
         let key = [0; 16];
-        let iv = [0; 16];
+        let nonce = [0; 16];
         let aad = [0; 16];
         let message = [0; 64];
 
-        let (ciphertext, tag) = encrypt(&key, &iv, &message, &aad);
-        let plaintext = decrypt(&key, &iv, &ciphertext, &aad, &tag).unwrap();
-        assert_eq!(plaintext, &message[..]);
+        let aead = AsconAead::<12, 8>::new(&key.into());
+        let mut buffer = message;
+
+        let tag = aead
+            .encrypt_in_place_detached(&nonce.into(), &aad, &mut buffer)
+            .unwrap();
+        aead.decrypt_in_place_detached(&nonce.into(), &aad, &mut buffer, &tag)
+            .unwrap();
+
+        assert_eq!(message, buffer);
     }
 
     #[test]
     fn test_vectors() {
-        let key = [0; 16];
-        let iv = [0; 16];
-        let aad = b"ASCON";
-        let message = b"ascon";
+        const KEY: [u8; 16] = [0; 16];
+        const NONCE: [u8; 16] = [0; 16];
+        const AAD: &[u8; 5] = b"ASCON";
+        const PLAINTEXT: &[u8; 5] = b"ascon";
+        const CIPHERTEXT: &[u8; 5] = &hex!("4c8c428949");
+        const TAG: &[u8; 16] = &hex!("65fd17b6d30cd876a05a8efcecad993a");
 
-        let (ciphertext, tag) = encrypt(&key, &iv, message, aad);
-        assert_eq!(ciphertext, [0x4c, 0x8c, 0x42, 0x89, 0x49]);
-        assert_eq!(
-            tag,
-            [
-                0x65, 0xfd, 0x17, 0xb6, 0xd3, 0x0c, 0xd8, 0x76, 0xa0, 0x5a, 0x8e, 0xfc, 0xec, 0xad,
-                0x99, 0x3a
-            ]
-        );
+        let aead = AsconAead::<12, 8>::new(&KEY.into());
+        let mut buffer = *PLAINTEXT;
 
-        let plaintext = decrypt(&key, &iv, &ciphertext, aad, &tag).unwrap();
-        assert_eq!(plaintext, message);
+        let tag = aead
+            .encrypt_in_place_detached(&NONCE.into(), AAD, &mut buffer)
+            .unwrap();
+
+        assert_eq!(CIPHERTEXT, &buffer);
+        assert_eq!(TAG, tag.as_slice());
+
+        aead.decrypt_in_place_detached(&NONCE.into(), AAD, &mut buffer, &tag)
+            .unwrap();
+
+        assert_eq!(PLAINTEXT, &buffer);
     }
 }

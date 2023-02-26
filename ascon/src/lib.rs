@@ -1,4 +1,5 @@
 #![no_std]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![doc = include_str!("../README.md")]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
@@ -17,8 +18,11 @@
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
-#[cfg(feature = "alloc")]
+#[cfg(feature = "aead")]
 pub mod aead;
+
+#[cfg(feature = "aead")]
+pub use crate::aead::AsconAead;
 
 use core::convert::TryInto;
 
