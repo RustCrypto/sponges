@@ -25,6 +25,9 @@ use core::convert::TryInto;
 /// Size of an Ascon key in bytes.
 const KEY_SIZE: usize = 16;
 
+/// Size of an Ascon nonce in bytes.
+const NONCE_SIZE: usize = 16;
+
 /// State size in bits.
 const S_BITS: usize = 320;
 
@@ -37,6 +40,9 @@ const RATE: usize = 128 / 8;
 /// Ascon permutation key.
 pub type Key = [u8; KEY_SIZE];
 
+/// Ascon nonce.
+pub type Nonce = [u8; NONCE_SIZE];
+
 /// Ascon permutation state.
 type State = [u8; S_SIZE];
 
@@ -48,23 +54,22 @@ pub struct Ascon<const A: usize = 12, const B: usize = 8> {
 
 impl<const A: usize, const B: usize> Ascon<A, B> {
     /// Initialize Ascon permutation.
-    // TODO(tarcieri): validate length of key and nonce
-    pub fn new(key: &Key, nonce: &[u8]) -> Self {
+    pub fn new(key: &Key, nonce: &Nonce) -> Self {
         let mut state = [0; S_SIZE];
         state[0] = KEY_SIZE as u8 * 8;
         state[1] = RATE as u8 * 8;
         state[2] = A as u8;
         state[3] = B as u8;
 
-        let mut pos = S_SIZE - 2 * KEY_SIZE;
-        state[pos..pos + key.len()].copy_from_slice(key);
-        pos += KEY_SIZE;
-        state[pos..pos + nonce.len()].copy_from_slice(nonce);
+        let pos = S_SIZE - KEY_SIZE - NONCE_SIZE;
+        let (k, n) = state[pos..].split_at_mut(KEY_SIZE);
+        k.copy_from_slice(key);
+        n.copy_from_slice(nonce);
 
         permutation(&mut state, 12 - A, A);
 
         for (i, &b) in key.iter().enumerate() {
-            state[pos + i] ^= b;
+            state[pos + KEY_SIZE + i] ^= b;
         }
 
         Self { key: *key, state }
