@@ -1,6 +1,6 @@
 //! Authenticated Encryption with Associated Data.
 
-use crate::{Ascon, KEY_LEN, RATE, S_SIZE};
+use crate::{Ascon, Key, KEY_SIZE, RATE, S_SIZE};
 use alloc::{vec, vec::Vec};
 
 /// Ascon(a,b) `b`-parameter.
@@ -23,7 +23,7 @@ pub enum DecryptFail {
 }
 
 /// AEAD encryption.
-pub fn encrypt(key: &[u8], iv: &[u8], message: &[u8], aad: &[u8]) -> (Vec<u8>, Tag) {
+pub fn encrypt(key: &Key, iv: &[u8], message: &[u8], aad: &[u8]) -> (Vec<u8>, Tag) {
     let s = aad.len() / RATE + 1;
     let t = message.len() / RATE + 1;
     let l = message.len() % RATE;
@@ -70,20 +70,20 @@ pub fn encrypt(key: &[u8], iv: &[u8], message: &[u8], aad: &[u8]) -> (Vec<u8>, T
 
     // tag
     let mut tag = Tag::default();
-    tag.copy_from_slice(&ss.finalize(key)[S_SIZE - KEY_LEN..]);
+    tag.copy_from_slice(&ss.finalize()[S_SIZE - KEY_SIZE..]);
 
     (output, tag)
 }
 
 /// AEAD decryption.
 pub fn decrypt(
-    key: &[u8],
+    key: &Key,
     iv: &[u8],
     ciphertext: &[u8],
     aad: &[u8],
     tag: &[u8],
 ) -> Result<Vec<u8>, DecryptFail> {
-    if tag.len() != KEY_LEN {
+    if tag.len() != KEY_SIZE {
         Err(DecryptFail::TagLengthError)?
     };
 
@@ -128,9 +128,9 @@ pub fn decrypt(
     ss.state[l] ^= 0x80;
 
     // finalization
-    let expected_tag = ss.finalize(key);
+    let expected_tag = ss.finalize();
 
-    if ct_eq(&expected_tag[S_SIZE - KEY_LEN..], tag) {
+    if ct_eq(&expected_tag[S_SIZE - KEY_SIZE..], tag) {
         Ok(mm[..ciphertext.len()].into())
     } else {
         Err(DecryptFail::AuthenticationFail)
