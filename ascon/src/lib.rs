@@ -105,14 +105,20 @@ impl<const A: usize, const B: usize> Ascon<A, B> {
 }
 
 /// Ascon permutation.
+// TODO(tarcieri): change `s` to `&mut [u8; 40]`
 fn permutation(s: &mut [u8], start: usize, rounds: usize) {
     let mut x = [0; 5];
     let mut t = [0; 5];
 
+    assert_eq!(s.len(), 8 * x.len());
+
+    // TODO(tarcieri): use `array_chunks` to eliminate `unwrap`
     #[allow(clippy::unwrap_used)]
-    for (i, b) in x.iter_mut().enumerate() {
-        *b = u64::from_be_bytes(s[(i * 8)..((i + 1) * 8)].try_into().unwrap());
-    }
+    s.chunks_exact(8)
+        .map(|c| c.try_into().unwrap())
+        .map(u64::from_be_bytes)
+        .zip(x.iter_mut())
+        .for_each(|(inp, out)| *out = inp);
 
     for i in start as u64..(start + rounds) as u64 {
         x[2] ^= ((0xfu64 - i) << 4) | i;
