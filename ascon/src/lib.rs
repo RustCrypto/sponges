@@ -158,7 +158,9 @@ fn permutation(s: &mut [u8], start: usize, rounds: usize) {
         x[4] ^= x[4].rotate_right(7) ^ x[4].rotate_right(41);
     }
 
-    for (i, &b) in x.iter().enumerate() {
-        s[(i * 8)..((i + 1) * 8)].copy_from_slice(&b.to_be_bytes())
-    }
+    x.into_iter()
+        .map(u64::to_be_bytes)
+        // TODO: replace with `array_chunks_mut` on stabilization
+        .zip(s.chunks_exact_mut(8))
+        .for_each(|(inp, out)| out.copy_from_slice(&inp))
 }
