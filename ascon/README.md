@@ -1,4 +1,4 @@
-# [RustCrypto]: Ascon
+# [RustCrypto]: Ascon permutation
 
 [![crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
@@ -7,8 +7,9 @@
 ![Rust Version][rustc-image]
 [![Project Chat][chat-image]][chat-link]
 
-Pure Rust implementation of [Ascon], a family of authenticated encryption and
-hashing algorithms designed to be lightweight and easy to implement.
+Pure Rust implementation of the permutation of [Ascon], a family of
+authenticated encryption and hashing algorithms designed to be lightweight and
+easy to implement.
 
 [Documentation][docs-link]
 
@@ -18,7 +19,7 @@ Ascon is a family of lightweight algorithms built on a core permutation
 algorithm. These algorithms include:
 
 - [x] Authenticated Encryption with Associated Data (AEAD)
-- [ ] Hash functions (HASH) and extendible-output functions (XOF)
+- [x] Hash functions (HASH) and extendible-output functions (XOF)
 - [ ] Pseudo-random functions (PRF) and message authentication codes (MAC)
 
 Ascon has been selected as [new standard for lightweight cryptography] in the
