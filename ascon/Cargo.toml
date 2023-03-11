@@ -21,6 +21,10 @@ rand = { version = "0.8", default-features = false, features = [
     "std_rng",
     "getrandom",
 ] }
+# workaround for underspecified dependencies from criterion
+# see also https://github.com/RustCrypto/formats/pull/720
+regex = { version = "1.5.1", default-features = false }
+serde = { version = "1.0.144", default-features = false }
 
 [features]
 no_unroll = [] # Do not unroll loops for binary size reduction
