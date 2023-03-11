@@ -1,3 +1,6 @@
+// Copyright 2021-2022 Sebastian Ramacher
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![doc = include_str!("../README.md")]
@@ -6,161 +9,422 @@
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg"
 )]
 #![forbid(unsafe_code)]
-#![warn(
-    clippy::mod_module_files,
-    clippy::unwrap_used,
-    missing_docs,
-    rust_2018_idioms,
-    unused_lifetimes,
-    unused_qualifications
-)]
+#![warn(missing_docs)]
 
-#[cfg(feature = "alloc")]
-extern crate alloc;
+use core::mem::size_of;
 
-#[cfg(feature = "aead")]
-pub mod aead;
-
-#[cfg(feature = "aead")]
-pub use crate::aead::AsconAead;
-
-use core::convert::TryInto;
-
-/// Size of an Ascon key in bytes.
-const KEY_SIZE: usize = 16;
-
-/// Size of an Ascon nonce in bytes.
-const NONCE_SIZE: usize = 16;
-
-/// State size in bits.
-const S_BITS: usize = 320;
-
-/// State size.
-const S_SIZE: usize = S_BITS / 8;
-
-/// Rate: Sᵣ.
-const RATE: usize = 128 / 8;
-
-/// Ascon permutation key.
-pub type Key = [u8; KEY_SIZE];
-
-/// Ascon nonce.
-pub type Nonce = [u8; NONCE_SIZE];
-
-/// Ascon permutation state.
-type State = [u8; S_SIZE];
-
-/// Ascon(a,b) permutation.
-pub struct Ascon<const A: usize = 12, const B: usize = 8> {
-    key: Key,
-    state: State,
+/// Produce mask for padding.
+#[inline(always)]
+pub const fn pad(n: usize) -> u64 {
+    0x80_u64 << (56 - 8 * n)
 }
 
-impl<const A: usize, const B: usize> Ascon<A, B> {
-    /// Initialize Ascon permutation.
-    pub fn new(key: &Key, nonce: &Nonce) -> Self {
-        let mut state = [0; S_SIZE];
-        state[0] = KEY_SIZE as u8 * 8;
-        state[1] = RATE as u8 * 8;
-        state[2] = A as u8;
-        state[3] = B as u8;
+/// Clear bytes from a 64 bit word.
+#[inline(always)]
+pub const fn clear(word: u64, n: usize) -> u64 {
+    word & (0x00ffffffffffffff >> (n * 8 - 8))
+}
 
-        let pos = S_SIZE - KEY_SIZE - NONCE_SIZE;
-        let (k, n) = state[pos..].split_at_mut(KEY_SIZE);
-        k.copy_from_slice(key);
-        n.copy_from_slice(nonce);
+/// Compute round constant
+#[inline(always)]
+const fn round_constant(round: u64) -> u64 {
+    ((0xfu64 - round) << 4) | round
+}
 
-        permutation(&mut state, 12 - A, A);
+/// The state of Ascon's permutation.
+///
+/// The permutation operates on a state of 320 bits represented as 5 64 bit words.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct State {
+    x: [u64; 5],
+}
 
-        for (i, &b) in key.iter().enumerate() {
-            state[pos + KEY_SIZE + i] ^= b;
+/// Ascon's round function
+const fn round(x: [u64; 5], c: u64) -> [u64; 5] {
+    // S-box layer
+    let x0 = x[0] ^ x[4];
+    let x2 = x[2] ^ x[1] ^ c; // with round constant
+    let x4 = x[4] ^ x[3];
+
+    let tx0 = x0 ^ (!x[1] & x2);
+    let tx1 = x[1] ^ (!x2 & x[3]);
+    let tx2 = x2 ^ (!x[3] & x4);
+    let tx3 = x[3] ^ (!x4 & x0);
+    let tx4 = x4 ^ (!x0 & x[1]);
+    let tx1 = tx1 ^ tx0;
+    let tx3 = tx3 ^ tx2;
+    let tx0 = tx0 ^ tx4;
+
+    // linear layer
+    let x0 = tx0 ^ tx0.rotate_right(9);
+    let x1 = tx1 ^ tx1.rotate_right(22);
+    let x2 = tx2 ^ tx2.rotate_right(5);
+    let x3 = tx3 ^ tx3.rotate_right(7);
+    let x4 = tx4 ^ tx4.rotate_right(34);
+    [
+        tx0 ^ x0.rotate_right(19),
+        tx1 ^ x1.rotate_right(39),
+        !(tx2 ^ x2.rotate_right(1)),
+        tx3 ^ x3.rotate_right(10),
+        tx4 ^ x4.rotate_right(7),
+    ]
+}
+
+impl State {
+    /// Instantiate new state from the given values.
+    pub fn new(x0: u64, x1: u64, x2: u64, x3: u64, x4: u64) -> Self {
+        State {
+            x: [x0, x1, x2, x3, x4],
         }
-
-        Self { key: *key, state }
     }
 
-    /// Perform Ascon permutation on internal state.
-    pub fn permutation(&mut self, start: usize, rounds: usize) {
-        permutation(&mut self.state, start, rounds);
+    #[cfg(not(feature = "no_unroll"))]
+    /// Perform permutation with 12 rounds.
+    pub fn permute_12(&mut self) {
+        // We could in theory iter().fold() over an array of round constants,
+        // but the compiler produces better results when optimizing this chain
+        // of round function calls.
+        self.x = round(
+            round(
+                round(
+                    round(
+                        round(
+                            round(
+                                round(
+                                    round(
+                                        round(round(round(round(self.x, 0xf0), 0xe1), 0xd2), 0xc3),
+                                        0xb4,
+                                    ),
+                                    0xa5,
+                                ),
+                                0x96,
+                            ),
+                            0x87,
+                        ),
+                        0x78,
+                    ),
+                    0x69,
+                ),
+                0x5a,
+            ),
+            0x4b,
+        );
     }
 
-    /// Finalize Ascon permutation.
+    #[cfg(feature = "no_unroll")]
+    /// Perform permutation with 12 rounds.
+    pub fn permute_12(&mut self) {
+        self.x = [
+            0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5, 0x96, 0x87, 0x78, 0x69, 0x5a, 0x4b,
+        ]
+        .into_iter()
+        .fold(self.x, round);
+    }
+
+    #[cfg(not(feature = "no_unroll"))]
+    /// Perform permutation with 8 rounds.
+    pub fn permute_8(&mut self) {
+        self.x = round(
+            round(
+                round(
+                    round(
+                        round(round(round(round(self.x, 0xb4), 0xa5), 0x96), 0x87),
+                        0x78,
+                    ),
+                    0x69,
+                ),
+                0x5a,
+            ),
+            0x4b,
+        );
+    }
+
+    #[cfg(feature = "no_unroll")]
+    /// Perform permutation with 8 rounds.
+    pub fn permute_8(&mut self) {
+        self.x = [0xb4, 0xa5, 0x96, 0x87, 0x78, 0x69, 0x5a, 0x4b]
+            .into_iter()
+            .fold(self.x, round);
+    }
+
+    #[cfg(not(feature = "no_unroll"))]
+    /// Perform permutation with 6 rounds.
+    pub fn permute_6(&mut self) {
+        self.x = round(
+            round(
+                round(round(round(round(self.x, 0x96), 0x87), 0x78), 0x69),
+                0x5a,
+            ),
+            0x4b,
+        );
+    }
+
+    #[cfg(feature = "no_unroll")]
+    /// Perform permutation with 6 rounds.
+    pub fn permute_6(&mut self) {
+        self.x = [0x96, 0x87, 0x78, 0x69, 0x5a, 0x4b]
+            .into_iter()
+            .fold(self.x, round);
+    }
+
+    /// Perform permutation with 1 round
+    pub fn permute_1(&mut self) {
+        self.x = round(self.x, 0x4b);
+    }
+
+    /// Perform a given number (up to 12) of permutations
+    ///
+    /// Panics (in debug mode) if `rounds` is larger than 12.
+    pub fn permute_n(&mut self, rounds: usize) {
+        debug_assert!(rounds <= 12);
+
+        let start = 12 - rounds;
+        self.x = (start..12).fold(self.x, |x, round_index| {
+            round(x, round_constant(round_index as u64))
+        });
+    }
+
+    /// Convert state to bytes.
+    pub fn as_bytes(&self) -> [u8; 40] {
+        let mut bytes = [0u8; size_of::<u64>() * 5];
+        for (dst, src) in bytes
+            .chunks_exact_mut(size_of::<u64>())
+            .zip(self.x.into_iter())
+        {
+            dst.copy_from_slice(&u64::to_be_bytes(src));
+        }
+        bytes
+    }
+}
+
+impl core::ops::Index<usize> for State {
+    type Output = u64;
+
     #[inline(always)]
-    #[must_use]
-    pub fn finalize(self) -> [u8; S_SIZE] {
-        let mut s = self.state;
-
-        for (i, &b) in self.key.iter().enumerate() {
-            s[RATE + i] ^= b;
-        }
-
-        permutation(&mut s, 12 - A, A);
-
-        for (i, &b) in self.key.iter().enumerate() {
-            s[S_SIZE - KEY_SIZE + i] ^= b;
-        }
-
-        s
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.x[index]
     }
 }
 
-/// Ascon permutation.
-// TODO(tarcieri): change `s` to `&mut [u8; 40]`
-fn permutation(s: &mut [u8], start: usize, rounds: usize) {
-    let mut x = [0; 5];
-    let mut t = [0; 5];
+impl core::ops::IndexMut<usize> for State {
+    #[inline(always)]
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.x[index]
+    }
+}
 
-    assert_eq!(s.len(), 8 * x.len());
+impl TryFrom<&[u64]> for State {
+    type Error = ();
 
-    // TODO(tarcieri): use `array_chunks` to eliminate `unwrap`
-    #[allow(clippy::unwrap_used)]
-    s.chunks_exact(8)
-        .map(|c| c.try_into().unwrap())
-        .map(u64::from_be_bytes)
-        .zip(x.iter_mut())
-        .for_each(|(inp, out)| *out = inp);
+    fn try_from(value: &[u64]) -> Result<Self, Self::Error> {
+        match value.len() {
+            5 => Ok(Self::new(value[0], value[1], value[2], value[3], value[4])),
+            _ => Err(()),
+        }
+    }
+}
 
-    for i in start as u64..(start + rounds) as u64 {
-        x[2] ^= ((0xfu64 - i) << 4) | i;
+impl From<&[u64; 5]> for State {
+    fn from(value: &[u64; 5]) -> Self {
+        Self { x: *value }
+    }
+}
 
-        x[0] ^= x[4];
-        x[4] ^= x[3];
-        x[2] ^= x[1];
-        t[0] = x[0];
-        t[1] = x[1];
-        t[2] = x[2];
-        t[3] = x[3];
-        t[4] = x[4];
-        t[0] = !t[0];
-        t[1] = !t[1];
-        t[2] = !t[2];
-        t[3] = !t[3];
-        t[4] = !t[4];
-        t[0] &= x[1];
-        t[1] &= x[2];
-        t[2] &= x[3];
-        t[3] &= x[4];
-        t[4] &= x[0];
-        x[0] ^= t[1];
-        x[1] ^= t[2];
-        x[2] ^= t[3];
-        x[3] ^= t[4];
-        x[4] ^= t[0];
-        x[1] ^= x[0];
-        x[0] ^= x[4];
-        x[3] ^= x[2];
-        x[2] = !x[2];
+impl TryFrom<&[u8]> for State {
+    type Error = ();
 
-        x[0] ^= x[0].rotate_right(19) ^ x[0].rotate_right(28);
-        x[1] ^= x[1].rotate_right(61) ^ x[1].rotate_right(39);
-        x[2] ^= x[2].rotate_right(1) ^ x[2].rotate_right(6);
-        x[3] ^= x[3].rotate_right(10) ^ x[3].rotate_right(17);
-        x[4] ^= x[4].rotate_right(7) ^ x[4].rotate_right(41);
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+        if value.len() != core::mem::size_of::<u64>() * 5 {
+            return Err(());
+        }
+
+        let mut state = Self::default();
+        for (src, dst) in value
+            .chunks_exact(core::mem::size_of::<u64>())
+            .zip(state.x.iter_mut())
+        {
+            *dst = u64::from_be_bytes(src.try_into().unwrap());
+        }
+        Ok(state)
+    }
+}
+
+impl From<&[u8; size_of::<u64>() * 5]> for State {
+    fn from(value: &[u8; size_of::<u64>() * 5]) -> Self {
+        let mut state = Self::default();
+        for (src, dst) in value
+            .chunks_exact(core::mem::size_of::<u64>())
+            .zip(state.x.iter_mut())
+        {
+            *dst = u64::from_be_bytes(src.try_into().unwrap());
+        }
+        state
+    }
+}
+
+impl AsRef<[u64]> for State {
+    fn as_ref(&self) -> &[u64] {
+        &self.x
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pad_0to7() {
+        assert_eq!(pad(0), 0x8000000000000000);
+        assert_eq!(pad(1), 0x80000000000000);
+        assert_eq!(pad(2), 0x800000000000);
+        assert_eq!(pad(3), 0x8000000000);
+        assert_eq!(pad(4), 0x80000000);
+        assert_eq!(pad(5), 0x800000);
+        assert_eq!(pad(6), 0x8000);
+        assert_eq!(pad(7), 0x80);
     }
 
-    x.into_iter()
-        .map(u64::to_be_bytes)
-        // TODO: replace with `array_chunks_mut` on stabilization
-        .zip(s.chunks_exact_mut(8))
-        .for_each(|(inp, out)| out.copy_from_slice(&inp))
+    #[test]
+    fn clear_0to7() {
+        assert_eq!(clear(0x0123456789abcdef, 1), 0x23456789abcdef);
+        assert_eq!(clear(0x0123456789abcdef, 2), 0x456789abcdef);
+        assert_eq!(clear(0x0123456789abcdef, 3), 0x6789abcdef);
+        assert_eq!(clear(0x0123456789abcdef, 4), 0x89abcdef);
+        assert_eq!(clear(0x0123456789abcdef, 5), 0xabcdef);
+        assert_eq!(clear(0x0123456789abcdef, 6), 0xcdef);
+        assert_eq!(clear(0x0123456789abcdef, 7), 0xef);
+    }
+
+    #[test]
+    fn round_constants() {
+        assert_eq!(round_constant(0), 0xf0);
+        assert_eq!(round_constant(1), 0xe1);
+        assert_eq!(round_constant(2), 0xd2);
+        assert_eq!(round_constant(3), 0xc3);
+        assert_eq!(round_constant(4), 0xb4);
+        assert_eq!(round_constant(5), 0xa5);
+        assert_eq!(round_constant(6), 0x96);
+        assert_eq!(round_constant(7), 0x87);
+        assert_eq!(round_constant(8), 0x78);
+        assert_eq!(round_constant(9), 0x69);
+        assert_eq!(round_constant(10), 0x5a);
+        assert_eq!(round_constant(11), 0x4b);
+    }
+
+    #[test]
+    fn one_round() {
+        let state = round(
+            [
+                0x0123456789abcdef,
+                0x23456789abcdef01,
+                0x456789abcdef0123,
+                0x6789abcdef012345,
+                0x89abcde01234567f,
+            ],
+            0x1f,
+        );
+        assert_eq!(
+            state,
+            [
+                0x3c1748c9be2892ce,
+                0x5eafb305cd26164f,
+                0xf9470254bb3a4213,
+                0xf0428daf0c5d3948,
+                0x281375af0b294899
+            ]
+        );
+    }
+
+    #[test]
+    fn state_permute_12() {
+        let mut state = State::new(
+            0x0123456789abcdef,
+            0xef0123456789abcd,
+            0xcdef0123456789ab,
+            0xabcdef0123456789,
+            0x89abcdef01234567,
+        );
+        state.permute_12();
+        assert_eq!(state[0], 0x206416dfc624bb14);
+        assert_eq!(state[1], 0x1b0c47a601058aab);
+        assert_eq!(state[2], 0x8934cfc93814cddd);
+        assert_eq!(state[3], 0xa9738d287a748e4b);
+        assert_eq!(state[4], 0xddd934f058afc7e1);
+    }
+
+    #[test]
+    fn state_permute_6() {
+        let mut state = State::new(
+            0x0123456789abcdef,
+            0xef0123456789abcd,
+            0xcdef0123456789ab,
+            0xabcdef0123456789,
+            0x89abcdef01234567,
+        );
+        state.permute_6();
+        assert_eq!(state[0], 0xc27b505c635eb07f);
+        assert_eq!(state[1], 0xd388f5d2a72046fa);
+        assert_eq!(state[2], 0x9e415c204d7b15e7);
+        assert_eq!(state[3], 0xce0d71450fe44581);
+        assert_eq!(state[4], 0xdd7c5fef57befe48);
+    }
+
+    #[test]
+    fn state_permute_8() {
+        let mut state = State::new(
+            0x0123456789abcdef,
+            0xef0123456789abcd,
+            0xcdef0123456789ab,
+            0xabcdef0123456789,
+            0x89abcdef01234567,
+        );
+        state.permute_8();
+        assert_eq!(state[0], 0x67ed228272f46eee);
+        assert_eq!(state[1], 0x80bc0b097aad7944);
+        assert_eq!(state[2], 0x2fa599382c6db215);
+        assert_eq!(state[3], 0x368133fae2f7667a);
+        assert_eq!(state[4], 0x28cefb195a7c651c);
+    }
+
+    #[test]
+    fn state_permute_n() {
+        let mut state = State::new(
+            0x0123456789abcdef,
+            0xef0123456789abcd,
+            0xcdef0123456789ab,
+            0xabcdef0123456789,
+            0x89abcdef01234567,
+        );
+        let mut state2 = state;
+
+        state.permute_6();
+        state2.permute_n(6);
+        assert_eq!(state.x, state2.x);
+
+        state.permute_8();
+        state2.permute_n(8);
+        assert_eq!(state.x, state2.x);
+
+        state.permute_12();
+        state2.permute_n(12);
+        assert_eq!(state.x, state2.x);
+    }
+
+    #[test]
+    fn state_convert_bytes() {
+        let state = State::new(
+            0x0123456789abcdef,
+            0xef0123456789abcd,
+            0xcdef0123456789ab,
+            0xabcdef0123456789,
+            0x89abcdef01234567,
+        );
+        let bytes = state.as_bytes();
+
+        let state2 = State::try_from(bytes.as_slice());
+        assert_eq!(state2.expect("try_from bytes").x, state.x);
+
+        let state2 = State::from(&bytes);
+        assert_eq!(state2.x, state.x);
+    }
 }
