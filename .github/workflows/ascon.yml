@@ -56,7 +56,6 @@ jobs:
           target: ${{ matrix.target }}
           override: true
       - run: cargo build --no-default-features --target ${{ matrix.target }}
-      - run: cargo build --no-default-features --target ${{ matrix.target }} --features aead
 
   minimal-versions:
     uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
