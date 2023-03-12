@@ -1,34 +1,22 @@
 [package]
 name = "ascon"
-version = "0.2.0"
-description = """
-Pure Rust implementation of Ascon, a family of authenticated encryption and
-hashing algorithms designed to be lightweight and easy to implement
-"""
-authors = ["quininer kel <quininer@live.com>", "RustCrypto Developers"]
+version = "0.3.0-pre"
+description = "Pure rust implementation of the Ascon permutation"
+authors = [
+    "Sebastian Ramacher <sebastian.ramacher@ait.ac.at>",
+    "RustCrypto Developers",
+]
 license = "Apache-2.0 OR MIT"
 documentation = "https://docs.rs/ascon"
 repository = "https://github.com/RustCrypto/sponges/tree/master/ascon"
-keywords = ["aead", "crypto", "sponge"]
+keywords = ["Ascon", "crypto", "permutation"]
 categories = ["cryptography", "no-std"]
 readme = "README.md"
 edition = "2021"
 rust-version = "1.60"
 
-[dependencies]
-aead = { version = "0.5", optional = true, default-features = false }
-subtle = { version = "2", optional = true, default-features = false }
-
-[dev-dependencies]
-hex-literal = "0.3"
-
 [features]
-default = ["aead"]
-alloc = ["aead?/alloc"]
-std = ["aead?/std"]
-
-aead = ["dep:aead", "alloc", "subtle"] # TODO(tarcieri): remove alloc dependency
+no_unroll = [] # Do not unroll loops for binary size reduction
 
 [package.metadata.docs.rs]
-all-features = true
 rustdoc-args = ["--cfg", "docsrs"]

@@ -1,0 +1,33 @@
+[package]
+name = "benches"
+version = "0.0.0"
+description = "Criteration benchmarks of the sponges crates"
+authors = [
+    "Sebastian Ramacher <sebastian.ramacher@ait.ac.at>",
+    "RustCrypto Developers",
+]
+edition = "2021"
+rust-version = "1.60"
+publish = false
+
+[workspace]
+
+[dev-dependencies]
+ascon = { path = "../ascon" }
+criterion = "0.4"
+rand = { version = "0.8", default-features = false, features = [
+    "std_rng",
+    "getrandom",
+] }
+# workaround for underspecified dependencies from criterion
+# see also https://github.com/RustCrypto/formats/pull/720
+regex = { version = "1.5.1", default-features = false }
+serde = { version = "1.0.144", default-features = false }
+
+[features]
+no_unroll = ["ascon?/no_unroll"]
+
+[[bench]]
+name = "ascon"
+path = "src/ascon.rs"
+harness = false
