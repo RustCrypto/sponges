@@ -4,4 +4,4 @@ version = 3
 
 [[package]]
 name = "ascon"
-version = "0.3.0-pre"
+version = "0.3.0"
