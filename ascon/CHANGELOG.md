@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.3.0 (2023-03-17)
+### Added
+- `State` type and permutation from `ascon-core` crate ([#49])
+- `no_unroll` feature
+
+### Removed
+- AEAD API and `aead` dependency
+  The implementation of the AEAD API is provided by `ascon-aead`.
+- `Ascon`, `Key`, `Nonce` types
+- `alloc`, `std`, and `aead` features
+
+[#49]: https://github.com/RustCrypto/sponges/pull/49
+
 ## 0.2.0 (2023-02-25)
 ### Added
 -  `no_std` support ([#36])
