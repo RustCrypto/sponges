@@ -404,7 +404,8 @@ mod tests {
         );
         let bytes = state.as_bytes();
 
-        let state2 = State::try_from(bytes.as_slice());
+        // test TryFrom<&[u8]>
+        let state2 = State::try_from(&bytes[..]);
         assert_eq!(state2.expect("try_from bytes").x, state.x);
 
         let state2 = State::from(&bytes);
