@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.3.1 (2023-03-19)
+### Changed
+- Drop MSRV to 1.56 ([#51])
+
+[#51]: https://github.com/RustCrypto/sponges/pull/51
+
 ## 0.3.0 (2023-03-17)
 ### Added
 - `State` type and permutation from `ascon-core` crate ([#49])
