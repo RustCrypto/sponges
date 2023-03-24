@@ -15,12 +15,10 @@ runs:
   steps:
       - uses: actions/checkout@v3
       - uses: RustCrypto/actions/cargo-cache@master
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
           toolchain: ${{ inputs.rust }}
-          target: ${{ inputs.target }}
-          override: true
+          targets: ${{ inputs.target }}
       - uses: RustCrypto/actions/cross-install@master
       - if: ${{ inputs.features != 'NO_FEATURE' }}
         run: |
