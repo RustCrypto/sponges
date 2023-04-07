@@ -41,4 +41,4 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 
 [sponge functions]: https://en.wikipedia.org/wiki/Sponge_function
 [Ascon]: https://ascon.iaik.tugraz.at/
-[Keccak]: https://en.wikipedia.org/wiki/BLAKE_(hash_function)#BLAKE2
+[Keccak]: https://keccak.team/keccak.html
