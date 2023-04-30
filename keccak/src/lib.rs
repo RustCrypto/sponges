@@ -160,20 +160,32 @@ impl_lanesize!(u32, 22, |rc: u64| {
 impl_lanesize!(u64, 24, |rc: u64| { rc });
 
 macro_rules! impl_keccak {
-    ($name:ident, $type:ty) => {
+    ($pname:ident, $fname:ident, $type:ty) => {
+
+        /// Keccak-p sponge function
+        pub fn $pname(state: &mut [$type; PLEN], round_count: usize) {
+            keccak_p(state, round_count);
+        }
+
         /// Keccak-f sponge function
-        pub fn $name(state: &mut [$type; PLEN]) {
+        pub fn $fname(state: &mut [$type; PLEN]) {
             keccak_p(state, <$type>::KECCAK_F_ROUND_COUNT);
         }
     };
 }
 
-impl_keccak!(f200, u8);
-impl_keccak!(f400, u16);
-impl_keccak!(f800, u32);
+impl_keccak!(p200, f200, u8);
+impl_keccak!(p400, f400, u16);
+impl_keccak!(p800, f800, u32);
 
 #[cfg(not(all(target_arch = "aarch64", feature = "asm")))]
-impl_keccak!(f1600, u64);
+impl_keccak!(p1600, f1600, u64);
+
+/// Keccak-p[1600, rc] permutation.
+#[cfg(all(target_arch = "aarch64", feature = "asm"))]
+pub fn p1600(state: &mut [u64; PLEN], round_count: usize) {
+    keccak_p(state, round_count);
+}
 
 /// Keccak-f[1600] permutation.
 #[cfg(all(target_arch = "aarch64", feature = "asm"))]
@@ -211,9 +223,9 @@ pub mod simd {
     impl_lanesize_simd_u64xn!(u64x4);
     impl_lanesize_simd_u64xn!(u64x8);
 
-    impl_keccak!(f1600x2, u64x2);
-    impl_keccak!(f1600x4, u64x4);
-    impl_keccak!(f1600x8, u64x8);
+    impl_keccak!(p1600x2, f1600x2, u64x2);
+    impl_keccak!(p1600x4, f1600x4, u64x4);
+    impl_keccak!(p1600x8, f1600x8, u64x8);
 }
 
 #[allow(unused_assignments)]
