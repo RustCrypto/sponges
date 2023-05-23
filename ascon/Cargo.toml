@@ -1,6 +1,6 @@
 [package]
 name = "ascon"
-version = "0.3.1"
+version = "0.4.0-pre"
 description = "Pure rust implementation of the Ascon permutation"
 authors = [
     "Sebastian Ramacher <sebastian.ramacher@ait.ac.at>",
@@ -14,6 +14,9 @@ categories = ["cryptography", "no-std"]
 readme = "README.md"
 edition = "2021"
 rust-version = "1.56"
+
+[dependencies]
+zeroize = { version = "1.6.0", default-features = false, optional=true }
 
 [features]
 no_unroll = [] # Do not unroll loops for binary size reduction

@@ -12,6 +12,8 @@
 #![warn(missing_docs)]
 
 use core::mem::size_of;
+#[cfg(feature = "zeroize")]
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 /// Produce mask for padding.
 #[inline(always)]
@@ -28,7 +30,7 @@ const fn round_constant(round: u64) -> u64 {
 /// The state of Ascon's permutation.
 ///
 /// The permutation operates on a state of 320 bits represented as 5 64 bit words.
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct State {
     x: [u64; 5],
 }
@@ -262,6 +264,16 @@ impl AsRef<[u64]> for State {
     }
 }
 
+#[cfg(feature = "zeroize")]
+impl Drop for State {
+    fn drop(&mut self) {
+        self.x.zeroize();
+    }
+}
+
+#[cfg(feature = "zeroize")]
+impl ZeroizeOnDrop for State {}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -378,7 +390,7 @@ mod tests {
             0xabcdef0123456789,
             0x89abcdef01234567,
         );
-        let mut state2 = state;
+        let mut state2 = state.clone();
 
         state.permute_6();
         state2.permute_n(6);
