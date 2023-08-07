@@ -183,10 +183,7 @@ impl State {
     /// Convert state to bytes.
     pub fn as_bytes(&self) -> [u8; 40] {
         let mut bytes = [0u8; size_of::<u64>() * 5];
-        for (dst, src) in bytes
-            .chunks_exact_mut(size_of::<u64>())
-            .zip(self.x.into_iter())
-        {
+        for (dst, src) in bytes.chunks_exact_mut(size_of::<u64>()).zip(self.x) {
             dst.copy_from_slice(&u64::to_be_bytes(src));
         }
         bytes
