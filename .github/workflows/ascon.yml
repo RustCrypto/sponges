@@ -81,9 +81,12 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: nightly
-          component: miri
-      - run: cargo miri setup
-      - run: |
+      - name: Install Miri
+        run: |
+          rustup component add miri
+          cargo miri setup
+      - name: Test with Miri
+        run: |
           cargo miri test --target ${{ matrix.target }} --no-default-features
           cargo miri test --target ${{ matrix.target }}
           cargo miri test --target ${{ matrix.target }} --all-features
