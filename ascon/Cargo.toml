@@ -16,7 +16,7 @@ edition = "2021"
 rust-version = "1.56"
 
 [dependencies]
-zeroize = { version = "1.6.0", default-features = false, optional=true }
+zeroize = { version = "1.6.1", default-features = false, optional=true }
 
 [features]
 no_unroll = [] # Do not unroll loops for binary size reduction
