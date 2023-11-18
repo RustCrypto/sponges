@@ -47,6 +47,7 @@ jobs:
     uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
     with:
         working-directory: ${{ github.workflow }}
+        stable-cmd: cargo hack test --release --feature-powerset --skip simd # `simd` requires nightly
 
   test:
     needs: set-msrv
