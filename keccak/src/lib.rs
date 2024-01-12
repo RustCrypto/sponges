@@ -54,7 +54,6 @@
 )]
 
 use core::{
-    convert::TryInto,
     fmt::Debug,
     mem::size_of,
     ops::{BitAnd, BitAndAssign, BitXor, BitXorAssign, Not},
