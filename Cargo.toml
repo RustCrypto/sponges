@@ -1,6 +1,6 @@
 [workspace]
-exclude = ["keccak"] # TODO(tarcieri): add back to `members` when MSRV >= 1.56
+resolver = "2"
 members = [
     "ascon",
-    #"keccak",
+    "keccak",
 ]
