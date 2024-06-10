@@ -8,7 +8,8 @@ and keccak-p variants
 authors = ["RustCrypto Developers"]
 license = "Apache-2.0 OR MIT"
 documentation = "https://docs.rs/keccak"
-repository = "https://github.com/RustCrypto/sponges/tree/master/keccak"
+homepage = "https://github.com/RustCrypto/sponges/tree/master/keccak"
+repository = "https://github.com/RustCrypto/sponges"
 keywords = ["crypto", "sponge", "keccak", "keccak-f", "keccak-p"]
 categories = ["cryptography", "no-std"]
 readme = "README.md"
