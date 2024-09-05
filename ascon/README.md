@@ -51,7 +51,7 @@ dual licensed as above, without any additional terms or conditions.
 
 [//]: # (badges)
 
-[crate-image]: https://buildstats.info/crate/ascon
+[crate-image]: https://img.shields.io/crates/v/ascon
 [crate-link]: https://crates.io/crates/ascon
 [docs-image]: https://docs.rs/ascon/badge.svg
 [docs-link]: https://docs.rs/ascon/
