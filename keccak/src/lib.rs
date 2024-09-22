@@ -254,9 +254,9 @@ pub fn keccak_p<L: LaneSize>(state: &mut [L; PLEN], round_count: usize) {
         });
 
         unroll5!(x, {
+            let t1 = array[(x + 4) % 5];
+            let t2 = array[(x + 1) % 5].rotate_left(1);
             unroll5!(y, {
-                let t1 = array[(x + 4) % 5];
-                let t2 = array[(x + 1) % 5].rotate_left(1);
                 state[5 * y + x] ^= t1 ^ t2;
             });
         });
