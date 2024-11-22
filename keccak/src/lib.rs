@@ -273,9 +273,7 @@ pub fn keccak_p<L: LaneSize>(state: &mut [L; PLEN], round_count: usize) {
         unroll5!(y_step, {
             let y = 5 * y_step;
 
-            unroll5!(x, {
-                array[x] = state[y + x];
-            });
+            array.copy_from_slice(&state[y..][..5]);
 
             unroll5!(x, {
                 let t1 = !array[(x + 1) % 5];
