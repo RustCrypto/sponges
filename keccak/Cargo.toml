@@ -14,7 +14,7 @@ keywords = ["crypto", "sponge", "keccak", "keccak-f", "keccak-p"]
 categories = ["cryptography", "no-std"]
 readme = "README.md"
 edition = "2021"
-rust-version = "1.60"
+rust-version = "1.81"
 
 [features]
 asm = []       # Use optimized assembly when available (currently only ARMv8)

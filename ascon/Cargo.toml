@@ -14,7 +14,7 @@ keywords = ["Ascon", "crypto", "permutation"]
 categories = ["cryptography", "no-std"]
 readme = "README.md"
 edition = "2021"
-rust-version = "1.60"
+rust-version = "1.81"
 
 [dependencies]
 zeroize = { version = "1.6.0", default-features = false, optional=true }
