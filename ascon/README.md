@@ -29,7 +29,7 @@ portfolio of the [CAESAR competition].
 
 ## Minimum Supported Rust Version
 
-This crate requires **Rust 1.60** at a minimum.
+This crate requires **Rust 1.81** at a minimum.
 
 We may change the MSRV in the future, but it will be accompanied by a minor
 version bump.
