@@ -21,7 +21,7 @@ jobs:
   set-msrv:
     uses: RustCrypto/actions/.github/workflows/set-msrv.yml@master
     with:
-        msrv: 1.81.0
+      msrv: 1.85.0
 
   build:
     needs: set-msrv
@@ -46,7 +46,7 @@ jobs:
   minimal-versions:
     uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
     with:
-        working-directory: ${{ github.workflow }}
+      working-directory: ${{ github.workflow }}
 
   test:
     needs: set-msrv

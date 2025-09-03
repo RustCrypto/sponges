@@ -6,8 +6,8 @@ authors = [
     "Sebastian Ramacher <sebastian.ramacher@ait.ac.at>",
     "RustCrypto Developers",
 ]
-edition = "2021"
-rust-version = "1.60"
+edition = "2024"
+rust-version = "1.85"
 publish = false
 
 [workspace]

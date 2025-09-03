@@ -4,7 +4,7 @@
 extern crate keccak;
 extern crate test;
 
-use keccak::{f1600, f200, f400, f800, p1600};
+use keccak::{f200, f400, f800, f1600, p1600};
 
 macro_rules! impl_bench {
     ($name:ident, $fn:ident, $type:expr) => {

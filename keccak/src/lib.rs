@@ -202,7 +202,7 @@ pub fn f1600(state: &mut [u64; PLEN]) {
 #[cfg(feature = "simd")]
 /// SIMD implementations for Keccak-f1600 sponge function
 pub mod simd {
-    use crate::{keccak_p, LaneSize, PLEN};
+    use crate::{LaneSize, PLEN, keccak_p};
     pub use core::simd::{u64x2, u64x4, u64x8};
 
     macro_rules! impl_lanesize_simd_u64xn {
@@ -289,7 +289,7 @@ pub fn keccak_p<L: LaneSize>(state: &mut [L; PLEN], round_count: usize) {
 
 #[cfg(test)]
 mod tests {
-    use crate::{keccak_p, LaneSize, PLEN};
+    use crate::{LaneSize, PLEN, keccak_p};
 
     fn keccak_f<L: LaneSize>(state_first: [L; PLEN], state_second: [L; PLEN]) {
         let mut state = [L::default(); PLEN];
