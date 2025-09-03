@@ -21,7 +21,7 @@ jobs:
   set-msrv:
     uses: RustCrypto/actions/.github/workflows/set-msrv.yml@master
     with:
-        msrv: 1.81.0
+      msrv: 1.85.0
 
   build:
     needs: set-msrv
@@ -46,8 +46,8 @@ jobs:
   minimal-versions:
     uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
     with:
-        working-directory: ${{ github.workflow }}
-        stable-cmd: cargo hack test --release --feature-powerset --skip simd # `simd` requires nightly
+      working-directory: ${{ github.workflow }}
+      stable-cmd: cargo hack test --release --feature-powerset --skip simd # `simd` requires nightly
 
   test:
     needs: set-msrv
@@ -111,7 +111,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-      # Cross mounts only current package, i.e. by default it ignores workspace's Cargo.toml
+        # Cross mounts only current package, i.e. by default it ignores workspace's Cargo.toml
         working-directory: .
     strategy:
       matrix:
