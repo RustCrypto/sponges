@@ -13,12 +13,3 @@ readme = "README.md"
 edition = "2024"
 rust-version = "1.85"
 
-[lints.rust]
-missing_docs = "warn"
-rust_2018_idioms = "warn"
-unused_lifetimes = "warn"
-unused_qualifications = "warn"
-
-[lints.clippy]
-mod_module_files = "warn"
-unwrap_used = "warn"
