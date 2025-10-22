@@ -89,8 +89,7 @@ fn bash_f_internal(state: &mut [u64; STATE_WORDS]) {
         // 3.2. For j = 0, 1, ..., 7 apply bash-s to each of 8 columns
         for j in 0..8 {
             // 3.2.a. (Sj, S8+j, S16+j) ← bash-s(Sj, S8+j, S16+j, m1, n1, m2, n2)
-            let (s0, s1, s2) =
-                bash_s(state[j], state[8 + j], state[16 + j], m1, n1, m2, n2);
+            let (s0, s1, s2) = bash_s(state[j], state[8 + j], state[16 + j], m1, n1, m2, n2);
             state[j] = s0;
             state[8 + j] = s1;
             state[16 + j] = s2;
