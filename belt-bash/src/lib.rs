@@ -133,6 +133,9 @@ mod tests {
     /// Test vector from Table A.1 of STB 34.101.77-2020.
     #[test]
     fn test_bash_s_table_a1() {
+        // Constants in the spec are given using LE order
+        // For example, in spec when they write B194BAC80A08F53B, they do not mean 0xB194BAC80A08F53B, but 0x3BF5080AC8BA94B1.
+        // https://github.com/RustCrypto/sponges/pull/92#issuecomment-3433315011
         let w0 = 0xB194BAC80A08F53Bu64.swap_bytes();
         let w1 = 0xE12BDC1AE28257ECu64.swap_bytes();
         let w2 = 0xE9DEE72C8F0C0FA6u64.swap_bytes();
