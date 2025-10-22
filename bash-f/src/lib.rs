@@ -10,26 +10,6 @@
 /// Number of 64-bit words in the state
 pub const STATE_WORDS: usize = 24;
 
-/// Precalculated rotation params
-const ROTATION_PARAMS: [(u32, u32, u32, u32); 8] = {
-    let mut params = [(0u32, 0u32, 0u32, 0u32); 8];
-    let mut m1 = 8u32;
-    let mut n1 = 53u32;
-    let mut m2 = 14u32;
-    let mut n2 = 1u32;
-
-    let mut j = 0;
-    while j < 8 {
-        params[j] = (m1, n1, m2, n2);
-        m1 = (7 * m1) % 64;
-        n1 = (7 * n1) % 64;
-        m2 = (7 * m2) % 64;
-        n2 = (7 * n2) % 64;
-        j += 1;
-    }
-    params
-};
-
 /// `bash-s` transformation.
 ///
 /// Implements the S-box transformation defined in Section 6.1 of STB 34.101.77-2020.
@@ -90,7 +70,7 @@ fn bash_s(
 ///
 /// # Parameters
 ///
-/// - `state`: Mutable reference to 24 × 64-bit words (1536 bits total) in little-endian internal representation
+/// - `state`: Mutable reference to 24 × 64-bit words (1536 bits total)
 pub fn bash_f(state: &mut [u64; STATE_WORDS]) {
     // 1. Split S into words (S0, S1, ..., S23)
 
@@ -101,15 +81,18 @@ pub fn bash_f(state: &mut [u64; STATE_WORDS]) {
     for _ in 0..STATE_WORDS {
         // 3.1. Apply S-box layer with varying rotation parameters
         // (m1, n1, m2, n2) ← (8, 53, 14, 1)
+        let (mut m1, mut n1, mut m2, mut n2) = (8, 53, 14, 1);
+
         // 3.2. For j = 0, 1, ..., 7 apply bash-s to each of 8 columns
         for j in 0..8 {
             // 3.2.a. (Sj, S8+j, S16+j) ← bash-s(Sj, S8+j, S16+j, m1, n1, m2, n2)
-            // 3.2.b. (m1, n1, m2, n2) ← (7·m1 mod 64, 7·n1 mod 64, 7·m2 mod 64, 7·n2 mod 64)
-            let (m1, n1, m2, n2) = ROTATION_PARAMS[j];
             let (s0, s1, s2) = bash_s(state[j], state[8 + j], state[16 + j], m1, n1, m2, n2);
             state[j] = s0;
             state[8 + j] = s1;
             state[16 + j] = s2;
+
+            // 3.2.b. (m1, n1, m2, n2) ← (7·m1 mod 64, 7·n1 mod 64, 7·m2 mod 64, 7·n2 mod 64)
+            (m1, n1, m2, n2) = ((7 * m1) % 64, (7 * n1) % 64, (7 * m2) % 64, (7 * n2) % 64);
         }
 
         // 3.3. Apply word permutation

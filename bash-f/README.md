@@ -18,12 +18,6 @@ The standard defines a family of cryptographic algorithms built on a sponge
 construction with the `bash-f` sponge function at its core. The sponge function
 operates on 1536-bit (192-byte) states.
 
-## Note on Byte Order
-
-The specification uses big-endian representation for test vectors, while
-internal computation uses little-endian.
-The public API handles byte swapping automatically.
-
 ## Security Notes
 
 No security audits of this crate have ever been performed, and it has not been thoroughly assessed to ensure its operation is constant-time on common CPU architectures.
