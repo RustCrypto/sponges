@@ -59,11 +59,5 @@ fn test_bash_f_table_a2() {
         0x7CED8E3F8B6E058E,
     ];
 
-    for i in 0..24 {
-        assert_eq!(
-            state[i], expected[i],
-            "Mismatch at S[{}]: got {:016X}, expected {:016X}",
-            i, state[i], expected[i]
-        );
-    }
+    assert_eq!(state, expected);
 }

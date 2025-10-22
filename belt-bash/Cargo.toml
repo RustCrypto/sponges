@@ -1,7 +1,7 @@
 [package]
 name = "belt-bash"
 version = "0.1.0-rc.0"
-description = "Pure Rust implementation of the BASH algorithms defined in STB 34.101.77-2020"
+description = "Pure Rust implementation of the bash-f sponge function defined in STB 34.101.77-2020"
 license = "Apache-2.0 OR MIT"
 authors = ["RustCrypto Developers"]
 documentation = "https://docs.rs/bash"
