@@ -7,11 +7,8 @@ authors = ["RustCrypto Developers"]
 documentation = "https://docs.rs/bash"
 homepage = "https://github.com/RustCrypto/sponges/tree/master/bash"
 repository = "https://github.com/RustCrypto/sponges"
-keywords = ["Bash", "belt", "permutation"]
+keywords = ["bash", "belt", "permutation"]
 categories = ["cryptography", "no-std"]
 readme = "README.md"
 edition = "2024"
 rust-version = "1.85"
-
-[features]
-no_unroll = [] # Do not unroll loops for binary size reduction

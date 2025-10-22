@@ -1,4 +1,4 @@
-# RustCrypto: BeltBash
+# RustCrypto: bash-f
 
 [![crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]

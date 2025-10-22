@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - "bash-f.yml"
-      - "../../bash-f/**"
+      - "bash-f/**"
       - "Cargo.*"
   push:
     branches: master

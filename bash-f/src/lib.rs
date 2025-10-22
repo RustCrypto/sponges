@@ -101,35 +101,15 @@ pub fn bash_f(state: &mut [u64; STATE_WORDS]) {
     for _ in 0..STATE_WORDS {
         // 3.1. Apply S-box layer with varying rotation parameters
         // (m1, n1, m2, n2) ← (8, 53, 14, 1)
-
         // 3.2. For j = 0, 1, ..., 7 apply bash-s to each of 8 columns
-        // 3.2.a. (Sj, S8+j, S16+j) ← bash-s(Sj, S8+j, S16+j, m1, n1, m2, n2)
-        // 3.2.b. (m1, n1, m2, n2) ← (7·m1 mod 64, 7·n1 mod 64, 7·m2 mod 64, 7·n2 mod 64)
-        macro_rules! apply_s_box {
-            ($j:expr) => {{
-                let (m1, n1, m2, n2) = ROTATION_PARAMS[$j];
-                let (s0, s1, s2) = bash_s(state[$j], state[8 + $j], state[16 + $j], m1, n1, m2, n2);
-                state[$j] = s0;
-                state[8 + $j] = s1;
-                state[16 + $j] = s2;
-            }};
-        }
-
-        #[cfg(feature = "no_unroll")]
         for j in 0..8 {
-            apply_s_box!(j);
-        }
-
-        #[cfg(not(feature = "no_unroll"))]
-        {
-            apply_s_box!(0);
-            apply_s_box!(1);
-            apply_s_box!(2);
-            apply_s_box!(3);
-            apply_s_box!(4);
-            apply_s_box!(5);
-            apply_s_box!(6);
-            apply_s_box!(7);
+            // 3.2.a. (Sj, S8+j, S16+j) ← bash-s(Sj, S8+j, S16+j, m1, n1, m2, n2)
+            // 3.2.b. (m1, n1, m2, n2) ← (7·m1 mod 64, 7·n1 mod 64, 7·m2 mod 64, 7·n2 mod 64)
+            let (m1, n1, m2, n2) = ROTATION_PARAMS[j];
+            let (s0, s1, s2) = bash_s(state[j], state[8 + j], state[16 + j], m1, n1, m2, n2);
+            state[j] = s0;
+            state[8 + j] = s1;
+            state[16 + j] = s2;
         }
 
         // 3.3. Apply word permutation
