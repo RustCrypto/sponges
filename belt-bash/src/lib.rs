@@ -70,7 +70,7 @@ fn bash_s_internal(
 /// the standard's big-endian representation and the internal little-endian
 /// computation.
 /// ```rust
-/// use bash::bash_s;
+/// use belt_bash::bash_s;
 /// let w0 = 0xB194BAC80A08F53B;
 /// let w1 = 0xE12BDC1AE28257EC;
 /// let w2 = 0xE9DEE72C8F0C0FA6;
@@ -181,7 +181,7 @@ fn bash_f_internal(state: &mut [u64; STATE_WORDS]) {
 /// # Example from Test Vector (Table A.2)
 ///
 /// ```rust
-/// use bash::bash_f;
+/// use belt_bash::bash_f;
 /// let mut state: [u64; 24] = [
 ///     0xB194BAC80A08F53B, 0x366D008E584A5DE4, 0x8504FA9D1BB6C7AC, 0x252E72C202FDCE0D,
 ///     0x5BE3D61217B96181, 0xFE6786AD716B890B, 0x5CB0C0FF33C356B8, 0x35C405AED8E07F99,
