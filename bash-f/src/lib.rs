@@ -11,16 +11,24 @@
 const STATE_WORDS: usize = 24;
 
 /// Precalculated rotation params
-const ROTATION_PARAMS: [(u32, u32, u32, u32); 8] = [
-    (8, 53, 14, 1),   // j=0
-    (56, 51, 34, 7),  // j=1: (7*8%64, 7*53%64, 7*14%64, 7*1%64)
-    (8, 37, 46, 49),  // j=2: (7*56%64, 7*51%64, 7*34%64, 7*7%64)
-    (56, 3, 2, 23),   // j=3
-    (8, 21, 14, 33),  // j=4
-    (56, 19, 34, 39), // j=5
-    (8, 5, 46, 17),   // j=6
-    (56, 35, 2, 55),  // j=7
-];
+const ROTATION_PARAMS: [(u32, u32, u32, u32); 8] = {
+    let mut params = [(0u32, 0u32, 0u32, 0u32); 8];
+    let mut m1 = 8u32;
+    let mut n1 = 53u32;
+    let mut m2 = 14u32;
+    let mut n2 = 1u32;
+
+    let mut j = 0;
+    while j < 8 {
+        params[j] = (m1, n1, m2, n2);
+        m1 = (7 * m1) % 64;
+        n1 = (7 * n1) % 64;
+        m2 = (7 * m2) % 64;
+        n2 = (7 * n2) % 64;
+        j += 1;
+    }
+    params
+};
 
 /// `bash-s` transformation.
 ///
@@ -109,8 +117,6 @@ pub fn bash_f(state: &mut [u64; STATE_WORDS]) {
 
         #[cfg(feature = "no_unroll")]
         for j in 0..8 {
-            // 3.2.a. (Sj, S8+j, S16+j) ← bash-s(Sj, S8+j, S16+j, m1, n1, m2, n2)
-            // 3.2.b. (m1, n1, m2, n2) ← (7·m1 mod 64, 7·n1 mod 64, 7·m2 mod 64, 7·n2 mod 64)
             apply_s_box!(j);
         }
 
@@ -170,24 +176,5 @@ mod tests {
         assert_eq!(w0_out, 0x479E76129979DC5Fu64.swap_bytes());
         assert_eq!(w1_out, 0x0F2B2C93ED128EDDu64.swap_bytes());
         assert_eq!(w2_out, 0x41009B1B112DFEF3u64.swap_bytes());
-    }
-
-    #[test]
-    /// Verify precalculated params
-    fn verify_rotation_params() {
-        let mut m1 = 8u32;
-        let mut n1 = 53u32;
-        let mut m2 = 14u32;
-        let mut n2 = 1u32;
-
-        for j in 0..8 {
-            let expected = ROTATION_PARAMS[j];
-            assert_eq!((m1, n1, m2, n2), expected);
-
-            m1 = (7 * m1) % 64;
-            n1 = (7 * n1) % 64;
-            m2 = (7 * m2) % 64;
-            n2 = (7 * n2) % 64;
-        }
     }
 }

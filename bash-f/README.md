@@ -47,16 +47,16 @@ dual licensed as above, without any additional terms or conditions.
 
 [//]: # (badges)
 
-[crate-image]: https://buildstats.info/crate/belt-bash
-[crate-link]: https://crates.io/crates/belt-bash
-[docs-image]: https://docs.rs/belt-bash/badge.svg
-[docs-link]: https://docs.rs/belt-bash/
+[crate-image]: https://buildstats.info/crate/bash-f
+[crate-link]: https://crates.io/crates/bash-f
+[docs-image]: https://docs.rs/bash-f/badge.svg
+[docs-link]: https://docs.rs/bash-f/
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
 [rustc-image]: https://img.shields.io/badge/rustc-1.85+-blue.svg
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260038-AEADs
 [downloads-image]: https://img.shields.io/crates/d/chacha20poly1305.svg
-[build-image]: https://github.com/RustCrypto/AEADs/workflows/belt-bash/badge.svg?branch=master&event=push
+[build-image]: https://github.com/RustCrypto/AEADs/workflows/bash-f/badge.svg?branch=master&event=push
 [build-link]: https://github.com/RustCrypto/AEADs/actions
 
 [//]: # (general links)

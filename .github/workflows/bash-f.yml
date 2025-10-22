@@ -1,17 +1,17 @@
-name: belt-bash
+name: bash-f
 
 on:
   pull_request:
     paths:
-      - ".github/workflows/belt-bash.yml"
-      - "belt-bash/**"
+      - "bash-f.yml"
+      - "../../bash-f/**"
       - "Cargo.*"
   push:
     branches: master
 
 defaults:
   run:
-    working-directory: belt-bash
+    working-directory: bash-f
 
 env:
   RUSTFLAGS: "-Dwarnings"

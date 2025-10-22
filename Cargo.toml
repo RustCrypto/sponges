@@ -2,6 +2,6 @@
 resolver = "2"
 members = [
     "ascon",
-    "belt-bash",
+    "bash-f",
     "keccak",
 ]

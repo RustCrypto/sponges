@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "belt-bash"
+name = "bash-f"
 version = "0.1.0-rc.0"
 
 [[package]]

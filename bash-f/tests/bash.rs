@@ -1,4 +1,4 @@
-use belt_bash::bash_f;
+use bash_f::bash_f;
 
 /// Test vector from Table A.2 of STB 34.101.77-2020.
 #[test]

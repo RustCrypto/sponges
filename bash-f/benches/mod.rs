@@ -1,7 +1,7 @@
 #![feature(test)]
 extern crate test;
 
-use belt_bash::bash_f;
+use bash_f::bash_f;
 use test::Bencher;
 
 const STATE_WORDS: usize = 24;
