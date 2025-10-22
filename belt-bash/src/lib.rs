@@ -1,68 +1,19 @@
-//! # BelHash - STB 34.101.77-2020 Sponge-Based Cryptographic Algorithms
-//!
-//! This module implements the cryptographic algorithms defined in the Belarusian
-//! state standard STB 34.101.77-2020 "Sponge-based cryptographic algorithms".
-//!
-//! ## Overview
-//!
-//! The standard defines a family of cryptographic algorithms built on a sponge
-//! construction with the `bash-f` sponge function at its core. The sponge function
-//! operates on 1536-bit (192-byte) states.
-//!
-//! ## Components
-//!
-//! ### Core Primitives
-//!
-//! - **bash-s**: S-box transformation operating on three 64-bit words
-//! - **bash-f**: Sponge permutation function (24 rounds)
-//!
-//! ### High-Level Algorithms
-//!
-//! - Hash functions (128-256 bit security levels)
-//! - Authenticated encryption
-//! - AEAD (Authenticated Encryption with Associated Data)
-//!
-//! ## Security Levels
-//!
-//! The standard supports three security levels:
-//! - ℓ = 128 bits
-//! - ℓ = 192 bits
-//! - ℓ = 256 bits
-//!
-//! ## References
-//!
-//! - STB 34.101.77-2020 specification
-//! - [Official standard](http://apmi.bsu.by/assets/files/std/bash-spec324.pdf)
-//!
-//! ## Note on Byte Order
-//!
-//! The specification uses big-endian representation for test vectors, while
-//! internal computation uses little-endian.
-//! The public API handles byte swapping automatically.
-
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![doc = include_str!("../README.md")]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg"
 )]
 #![allow(non_upper_case_globals)]
-#![warn(
-    clippy::mod_module_files,
-    clippy::unwrap_used,
-    missing_docs,
-    rust_2018_idioms,
-    unused_lifetimes,
-    unused_qualifications
-)]
 
 /// Number of 64-bit words in the state
 const STATE_WORDS: usize = 24;
 
-/// Internal bash-s transformation.
+/// Internal `bash-s` transformation.
 ///
 /// Implements the S-box transformation defined in Section 6.1 of STB 34.101.77-2020.
-/// This is the core non-linear transformation used in the bash-f sponge function.
+/// This is the core non-linear transformation used in the `bash-f` sponge function.
 fn bash_s_internal(
     mut w0: u64,
     mut w1: u64,
@@ -112,9 +63,9 @@ fn bash_s_internal(
     (w0, w1, w2)
 }
 
-/// bash-s transformation with standard-compliant byte order.
+/// `bash-s` transformation with standard-compliant byte order.
 ///
-/// This is the public interface to the bash-s algorithm as defined in
+/// This is the public interface to the `bash-s` algorithm as defined in
 /// Section 6.1 of STB 34.101.77-2020. It handles conversion between
 /// the standard's big-endian representation and the internal little-endian
 /// computation.
@@ -148,7 +99,7 @@ pub fn bash_s(w0: u64, w1: u64, w2: u64, m1: u32, n1: u32, m2: u32, n2: u32) -> 
     )
 }
 
-/// Internal bash-f sponge permutation.
+/// Internal `bash-f` sponge permutation.
 ///
 /// Implements the core sponge function defined in Section 6.2 of STB 34.101.77-2020.
 /// This is a cryptographic permutation that operates on 1536-bit states.
@@ -214,7 +165,7 @@ fn bash_f_internal(state: &mut [u64; STATE_WORDS]) {
     // 4. Return S - state is modified in place
 }
 
-/// bash-f sponge function with standard-compliant interface.
+/// `bash-f` sponge function with standard-compliant interface.
 ///
 /// This is the public interface as specified in Section 6.2 of STB 34.101.77-2020.
 /// It accepts and returns states in big-endian byte order as per the standard.

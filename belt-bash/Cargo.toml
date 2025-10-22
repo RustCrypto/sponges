@@ -1,5 +1,5 @@
 [package]
-name = "bash"
+name = "belt-bash"
 version = "0.1.0-rc.0"
 description = "Pure Rust implementation of the BASH algorithms defined in STB 34.101.77-2020"
 license = "Apache-2.0 OR MIT"
@@ -13,4 +13,12 @@ readme = "README.md"
 edition = "2024"
 rust-version = "1.85"
 
-[dependencies]
+[lints.rust]
+missing_docs = "warn"
+rust_2018_idioms = "warn"
+unused_lifetimes = "warn"
+unused_qualifications = "warn"
+
+[lints.clippy]
+mod_module_files = "warn"
+unwrap_used = "warn"

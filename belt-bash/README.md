@@ -7,8 +7,22 @@
 [![Project Chat][chat-image]][chat-link]
 [![Build Status][build-image]][build-link]
 
-Pure Rust implementation of the `bash` sponge algorithms
-specified in the republic of Belarus standard [STB 34.101.77-2020].
+# BelHash - [STB 34.101.77-2020] Sponge-Based Cryptographic Algorithms
+
+This module implements the cryptographic algorithms defined in the Belarusian
+state standard STB 34.101.77-2020 "Sponge-based cryptographic algorithms".
+
+## Overview
+
+The standard defines a family of cryptographic algorithms built on a sponge
+construction with the `bash-f` sponge function at its core. The sponge function
+operates on 1536-bit (192-byte) states.
+
+## Note on Byte Order
+
+The specification uses big-endian representation for test vectors, while
+internal computation uses little-endian.
+The public API handles byte swapping automatically.
 
 ## Security Notes
 
