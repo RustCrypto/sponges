@@ -13,3 +13,5 @@ readme = "README.md"
 edition = "2024"
 rust-version = "1.85"
 
+[features]
+no_unroll = [] # Do not unroll loops for binary size reduction
