@@ -8,7 +8,7 @@
 #![warn(missing_docs)]
 
 /// Number of 64-bit words in the state
-const STATE_WORDS: usize = 24;
+pub const STATE_WORDS: usize = 24;
 
 /// Precalculated rotation params
 const ROTATION_PARAMS: [(u32, u32, u32, u32); 8] = {

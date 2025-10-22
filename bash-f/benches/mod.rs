@@ -1,10 +1,8 @@
 #![feature(test)]
 extern crate test;
 
-use bash_f::bash_f;
+use bash_f::{STATE_WORDS, bash_f};
 use test::Bencher;
-
-const STATE_WORDS: usize = 24;
 
 #[bench]
 fn bench_bash_f(b: &mut Bencher) {
