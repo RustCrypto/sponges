@@ -10,11 +10,11 @@
 /// Number of 64-bit words in the state
 const STATE_WORDS: usize = 24;
 
-/// Internal `bash-s` transformation.
+/// `bash-s` transformation.
 ///
 /// Implements the S-box transformation defined in Section 6.1 of STB 34.101.77-2020.
 /// This is the core non-linear transformation used in the `bash-f` sponge function.
-fn bash_s_internal(
+fn bash_s(
     mut w0: u64,
     mut w1: u64,
     mut w2: u64,
@@ -63,42 +63,6 @@ fn bash_s_internal(
     (w0, w1, w2)
 }
 
-/// `bash-s` transformation with standard-compliant byte order.
-///
-/// This is the public interface to the `bash-s` algorithm as defined in
-/// Section 6.1 of STB 34.101.77-2020. It handles conversion between
-/// the standard's big-endian representation and the internal little-endian
-/// computation.
-/// ```rust
-/// use belt_bash::bash_s;
-/// let w0 = 0xB194BAC80A08F53B;
-/// let w1 = 0xE12BDC1AE28257EC;
-/// let w2 = 0xE9DEE72C8F0C0FA6;
-/// let (r0, r1, r2) = bash_s(w0, w1, w2, 8, 53, 14, 1);
-/// assert_eq!(r0, 0x479E76129979DC5F);
-/// assert_eq!(r1, 0x0F2B2C93ED128EDD);
-/// assert_eq!(r2, 0x41009B1B112DFEF3);
-/// ```
-pub fn bash_s(w0: u64, w1: u64, w2: u64, m1: u32, n1: u32, m2: u32, n2: u32) -> (u64, u64, u64) {
-    // Convert from big-endian (standard) to little-endian (internal)
-    let (w0_out, w1_out, w2_out) = bash_s_internal(
-        w0.swap_bytes(),
-        w1.swap_bytes(),
-        w2.swap_bytes(),
-        m1,
-        n1,
-        m2,
-        n2,
-    );
-
-    // Convert back to big-endian for output
-    (
-        w0_out.swap_bytes(),
-        w1_out.swap_bytes(),
-        w2_out.swap_bytes(),
-    )
-}
-
 /// Internal `bash-f` sponge permutation.
 ///
 /// Implements the core sponge function defined in Section 6.2 of STB 34.101.77-2020.
@@ -111,7 +75,7 @@ fn bash_f_internal(state: &mut [u64; STATE_WORDS]) {
     // 1. Split S into words (S0, S1, ..., S23)
 
     // 2. C ← B194BAC80A08F53B (initialize round constant, swapped to little-endian)
-    let mut c: u64 = 0xB194BAC80A08F53Bu64.swap_bytes();
+    let mut c: u64 = 0x3BF5080AC8BA94B1;
 
     // 3. For i = 1, 2, ..., 24 perform 24 rounds
     for _ in 0..STATE_WORDS {
@@ -126,7 +90,7 @@ fn bash_f_internal(state: &mut [u64; STATE_WORDS]) {
         for j in 0..8 {
             // 3.2.a. (Sj, S8+j, S16+j) ← bash-s(Sj, S8+j, S16+j, m1, n1, m2, n2)
             let (s0, s1, s2) =
-                bash_s_internal(state[j], state[8 + j], state[16 + j], m1, n1, m2, n2);
+                bash_s(state[j], state[8 + j], state[16 + j], m1, n1, m2, n2);
             state[j] = s0;
             state[8 + j] = s1;
             state[16 + j] = s2;
@@ -138,7 +102,7 @@ fn bash_f_internal(state: &mut [u64; STATE_WORDS]) {
             n2 = (7 * n2) % 64;
         }
 
-        // 3.3. Apply word permutation π
+        // 3.3. Apply word permutation
         // S ← S15 ‖ S10 ‖ S9 ‖ S12 ‖ S11 ‖ S14 ‖ S13 ‖ S8 ‖
         //     S17 ‖ S16 ‖ S19 ‖ S18 ‖ S21 ‖ S20 ‖ S23 ‖ S22 ‖
         //     S6 ‖ S3 ‖ S0 ‖ S5 ‖ S2 ‖ S7 ‖ S4 ‖ S1
@@ -158,7 +122,7 @@ fn bash_f_internal(state: &mut [u64; STATE_WORDS]) {
         if c & 1 == 0 {
             c >>= 1;
         } else {
-            c = (c >> 1) ^ 0xAED8E07F99E12BDCu64.swap_bytes();
+            c = (c >> 1) ^ 0xDC2BE1997FE0D8AE;
         }
     }
 
@@ -207,15 +171,15 @@ mod tests {
     /// Test vector from Table A.1 of STB 34.101.77-2020.
     #[test]
     fn test_bash_s_table_a1() {
-        let w0 = 0xB194BAC80A08F53B;
-        let w1 = 0xE12BDC1AE28257EC;
-        let w2 = 0xE9DEE72C8F0C0FA6;
+        let w0 = 0xB194BAC80A08F53Bu64.swap_bytes();
+        let w1 = 0xE12BDC1AE28257ECu64.swap_bytes();
+        let w2 = 0xE9DEE72C8F0C0FA6u64.swap_bytes();
 
         let (w0_out, w1_out, w2_out) = bash_s(w0, w1, w2, 8, 53, 14, 1);
 
-        assert_eq!(w0_out, 0x479E76129979DC5F);
-        assert_eq!(w1_out, 0x0F2B2C93ED128EDD);
-        assert_eq!(w2_out, 0x41009B1B112DFEF3);
+        assert_eq!(w0_out, 0x479E76129979DC5Fu64.swap_bytes());
+        assert_eq!(w1_out, 0x0F2B2C93ED128EDDu64.swap_bytes());
+        assert_eq!(w2_out, 0x41009B1B112DFEF3u64.swap_bytes());
     }
 
     /// Test vector from Table A.2 of STB 34.101.77-2020.
