@@ -3,7 +3,7 @@ use belt_bash::bash_f;
 /// Test vector from Table A.2 of STB 34.101.77-2020.
 #[test]
 fn test_bash_f_table_a2() {
-    let mut state: [u64; 24] = [
+    let input: [u64; 24] = [
         0xB194BAC80A08F53B,
         0x366D008E584A5DE4,
         0x8504FA9D1BB6C7AC,
@@ -29,8 +29,6 @@ fn test_bash_f_table_a2() {
         0x682080AA227D642F,
         0x2687F93490405511,
     ];
-
-    bash_f(&mut state);
 
     let expected: [u64; 24] = [
         0x8FE727775EA7F140,
@@ -59,5 +57,14 @@ fn test_bash_f_table_a2() {
         0x7CED8E3F8B6E058E,
     ];
 
-    assert_eq!(state, expected);
+    // Constants in the spec are given using LE order
+    // For example, in spec when they write B194BAC80A08F53B, they do not mean 0xB194BAC80A08F53B, but 0x3BF5080AC8BA94B1.
+    // https://github.com/RustCrypto/sponges/pull/92#issuecomment-3433315011
+    let mut state = input.map(|x| x.swap_bytes());
+
+    bash_f(&mut state);
+
+    let output = state.map(|x| x.swap_bytes());
+
+    assert_eq!(output, expected);
 }

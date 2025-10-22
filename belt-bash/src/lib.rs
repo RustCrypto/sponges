@@ -63,7 +63,7 @@ fn bash_s(
     (w0, w1, w2)
 }
 
-/// Internal `bash-f` sponge permutation.
+/// `bash-f` sponge permutation.
 ///
 /// Implements the core sponge function defined in Section 6.2 of STB 34.101.77-2020.
 /// This is a cryptographic permutation that operates on 1536-bit states.
@@ -71,7 +71,7 @@ fn bash_s(
 /// # Parameters
 ///
 /// - `state`: Mutable reference to 24 × 64-bit words (1536 bits total) in little-endian internal representation
-fn bash_f_internal(state: &mut [u64; STATE_WORDS]) {
+pub fn bash_f(state: &mut [u64; STATE_WORDS]) {
     // 1. Split S into words (S0, S1, ..., S23)
 
     // 2. C ← B194BAC80A08F53B (initialize round constant, swapped to little-endian)
@@ -105,12 +105,10 @@ fn bash_f_internal(state: &mut [u64; STATE_WORDS]) {
         // S ← S15 ‖ S10 ‖ S9 ‖ S12 ‖ S11 ‖ S14 ‖ S13 ‖ S8 ‖
         //     S17 ‖ S16 ‖ S19 ‖ S18 ‖ S21 ‖ S20 ‖ S23 ‖ S22 ‖
         //     S6 ‖ S3 ‖ S0 ‖ S5 ‖ S2 ‖ S7 ‖ S4 ‖ S1
-        let temp = [
-            state[15], state[10], state[9], state[12], state[11], state[14], state[13], state[8],
-            state[17], state[16], state[19], state[18], state[21], state[20], state[23], state[22],
-            state[6], state[3], state[0], state[5], state[2], state[7], state[4], state[1],
+        const INDEXES: [usize; STATE_WORDS] = [
+            15, 10, 9, 12, 11, 14, 13, 8, 17, 16, 19, 18, 21, 20, 23, 22, 6, 3, 0, 5, 2, 7, 4, 1,
         ];
-        state.copy_from_slice(&temp);
+        *state = INDEXES.map(|i| state[i]);
 
         // 3.4. S23 ← S23 ⊕ C (add round constant)
         state[23] ^= c;
@@ -126,24 +124,6 @@ fn bash_f_internal(state: &mut [u64; STATE_WORDS]) {
     }
 
     // 4. Return S - state is modified in place
-}
-
-/// `bash-f` sponge function with standard-compliant interface.
-///
-/// This is the public interface as specified in Section 6.2 of STB 34.101.77-2020.
-/// It accepts and returns states in big-endian byte order as per the standard.
-///
-/// # Parameters
-///
-/// - `state`: Mutable array of 24 × 64-bit words (192 bytes total) in **big-endian** byte order
-///
-/// # Side Effects
-///
-/// Transforms the state in-place through 24 rounds of the sponge permutation.
-pub fn bash_f(state: &mut [u64; 24]) {
-    state.iter_mut().for_each(|s| *s = s.swap_bytes());
-    bash_f_internal(state);
-    state.iter_mut().for_each(|s| *s = s.swap_bytes());
 }
 
 #[cfg(test)]
