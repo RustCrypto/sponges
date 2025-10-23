@@ -6,10 +6,11 @@ Collection of [sponge functions] written in pure Rust.
 
 ## Supported Algorithms
 
-| Crate      | Algorithm  | Crates.io | Documentation |
-|------------|------------|-----------|---------------|
-| [`ascon`]  | [Ascon]    | [![crates.io](https://img.shields.io/crates/v/ascon.svg)](https://crates.io/crates/ascon) | [![Documentation](https://docs.rs/ascon/badge.svg)](https://docs.rs/ascon) |
-| [`keccak`] | [Keccak]   | [![crates.io](https://img.shields.io/crates/v/keccak.svg)](https://crates.io/crates/keccak) | [![Documentation](https://docs.rs/keccak/badge.svg)](https://docs.rs/keccak) |
+| Crate      | Algorithm       | Crates.io | Documentation |
+|------------|-----------------|-----------|---------------|
+| [`ascon`]  | [Ascon]         | [![crates.io](https://img.shields.io/crates/v/ascon.svg)](https://crates.io/crates/ascon) | [![Documentation](https://docs.rs/ascon/badge.svg)](https://docs.rs/ascon) |
+| [`bash-f`] | [`bash-f`][STB] | [![crates.io](https://img.shields.io/crates/v/bash-f.svg)](https://crates.io/crates/bash-f) | [![Documentation](https://docs.rs/bash-f/badge.svg)](https://docs.rs/bash-f) |
+| [`keccak`] | [Keccak]        | [![crates.io](https://img.shields.io/crates/v/keccak.svg)](https://crates.io/crates/keccak) | [![Documentation](https://docs.rs/keccak/badge.svg)](https://docs.rs/keccak) |
 
 ## License
 
@@ -35,10 +36,12 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 [//]: # (crates)
 
 [`ascon`]: ./ascon
+[`bash-f`]: ./bash-f
 [`keccak`]: ./keccak
 
 [//]: # (algorithms)
 
 [sponge functions]: https://en.wikipedia.org/wiki/Sponge_function
 [Ascon]: https://ascon.iaik.tugraz.at/
+[STB]: https://apmi.bsu.by/assets/files/std/bash-spec241.pdf
 [Keccak]: https://keccak.team/keccak.html
