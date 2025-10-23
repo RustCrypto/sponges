@@ -1,8 +1,9 @@
-use bash_f::bash_f;
-
 /// Test vector from Table A.2 of STB 34.101.77-2020.
 #[test]
 fn test_bash_f_table_a2() {
+    // Note that constants in the spec are provided using the LE order (see Section 4.2.2).
+    // In other words, B194BAC80A08F53B denotes not 0xB194BAC80A08F53B, but 0x3BF5080AC8BA94B1.
+    // To make comparison easier, we use the constants as-is and apply `swap_bytes` later.
     let input: [u64; 24] = [
         0xB194BAC80A08F53B,
         0x366D008E584A5DE4,
@@ -57,14 +58,10 @@ fn test_bash_f_table_a2() {
         0x7CED8E3F8B6E058E,
     ];
 
-    // Constants in the spec are given using LE order
-    // For example, in spec when they write B194BAC80A08F53B, they do not mean 0xB194BAC80A08F53B, but 0x3BF5080AC8BA94B1.
-    // https://github.com/RustCrypto/sponges/pull/92#issuecomment-3433315011
     let mut state = input.map(|x| x.swap_bytes());
+    let expected = expected.map(|x| x.swap_bytes());
 
-    bash_f(&mut state);
+    bash_f::bash_f(&mut state);
 
-    let output = state.map(|x| x.swap_bytes());
-
-    assert_eq!(output, expected);
+    assert_eq!(state, expected);
 }

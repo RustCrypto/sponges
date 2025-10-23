@@ -2,27 +2,15 @@
 
 [![crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
+[![Build Status][build-image]][build-link]
 ![Apache2/MIT licensed][license-image]
 ![Rust Version][rustc-image]
 [![Project Chat][chat-image]][chat-link]
-[![Build Status][build-image]][build-link]
 
-# BelHash - [STB 34.101.77-2020] Sponge-Based Cryptographic Algorithms
+Pure Rust implementation of the `bash-f` sponge function defined in the Belarusian
+state standard [STB 34.101.77-2020] "Sponge-based cryptographic algorithms".
 
-This module implements the cryptographic algorithms defined in the Belarusian
-state standard STB 34.101.77-2020 "Sponge-based cryptographic algorithms".
-
-## Overview
-
-The standard defines a family of cryptographic algorithms built on a sponge
-construction with the `bash-f` sponge function at its core. The sponge function
-operates on 1536-bit (192-byte) states.
-
-## Security Notes
-
-No security audits of this crate have ever been performed, and it has not been thoroughly assessed to ensure its operation is constant-time on common CPU architectures.
-
-USE AT YOUR OWN RISK!
+[STB 34.101.77-2020]: https://apmi.bsu.by/assets/files/std/bash-spec241.pdf
 
 ## License
 
@@ -41,18 +29,13 @@ dual licensed as above, without any additional terms or conditions.
 
 [//]: # (badges)
 
-[crate-image]: https://buildstats.info/crate/bash-f
+[crate-image]: https://img.shields.io/crates/v/bash-f.svg
 [crate-link]: https://crates.io/crates/bash-f
 [docs-image]: https://docs.rs/bash-f/badge.svg
 [docs-link]: https://docs.rs/bash-f/
+[build-image]: https://github.com/RustCrypto/sponges/actions/workflows/bash-f.yml/badge.svg
+[build-link]: https://github.com/RustCrypto/sponges/actions/workflows/bash-f.yml
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
 [rustc-image]: https://img.shields.io/badge/rustc-1.85+-blue.svg
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
-[chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260038-AEADs
-[downloads-image]: https://img.shields.io/crates/d/chacha20poly1305.svg
-[build-image]: https://github.com/RustCrypto/AEADs/workflows/bash-f/badge.svg?branch=master&event=push
-[build-link]: https://github.com/RustCrypto/AEADs/actions
-
-[//]: # (general links)
-
-[STB 34.101.77-2020]: https://apmi.bsu.by/assets/files/std/bash-spec241.pdf
+[chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/369879-sponges

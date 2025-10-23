@@ -7,13 +7,10 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(missing_docs)]
 
-/// Number of 64-bit words in the state
+/// Number of 64-bit words in the [`bash-f`][bash_f] state.
 pub const STATE_WORDS: usize = 24;
 
-/// `bash-s` transformation.
-///
-/// Implements the S-box transformation defined in Section 6.1 of STB 34.101.77-2020.
-/// This is the core non-linear transformation used in the `bash-f` sponge function.
+/// `bash-s` transformation defined in Section 6.1 of STB 34.101.77-2020.
 fn bash_s(
     mut w0: u64,
     mut w1: u64,
@@ -63,14 +60,7 @@ fn bash_s(
     (w0, w1, w2)
 }
 
-/// `bash-f` sponge permutation.
-///
-/// Implements the core sponge function defined in Section 6.2 of STB 34.101.77-2020.
-/// This is a cryptographic permutation that operates on 1536-bit states.
-///
-/// # Parameters
-///
-/// - `state`: Mutable reference to 24 × 64-bit words (1536 bits total)
+/// `bash-f` sponge permutation defined in Section 6.2 of STB 34.101.77-2020.
 pub fn bash_f(state: &mut [u64; STATE_WORDS]) {
     // 1. Split S into words (S0, S1, ..., S23)
 
@@ -120,24 +110,17 @@ pub fn bash_f(state: &mut [u64; STATE_WORDS]) {
     // 4. Return S - state is modified in place
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+/// Test vector from Table A.1 of STB 34.101.77-2020.
+#[test]
+fn test_bash_s() {
+    // Note that constants in the spec are provided using the LE order (see Section 4.2.2).
+    let w0 = 0xB194BAC80A08F53Bu64.swap_bytes();
+    let w1 = 0xE12BDC1AE28257ECu64.swap_bytes();
+    let w2 = 0xE9DEE72C8F0C0FA6u64.swap_bytes();
 
-    /// Test vector from Table A.1 of STB 34.101.77-2020.
-    #[test]
-    fn test_bash_s_table_a1() {
-        // Constants in the spec are given using LE order
-        // For example, in spec when they write B194BAC80A08F53B, they do not mean 0xB194BAC80A08F53B, but 0x3BF5080AC8BA94B1.
-        // https://github.com/RustCrypto/sponges/pull/92#issuecomment-3433315011
-        let w0 = 0xB194BAC80A08F53Bu64.swap_bytes();
-        let w1 = 0xE12BDC1AE28257ECu64.swap_bytes();
-        let w2 = 0xE9DEE72C8F0C0FA6u64.swap_bytes();
+    let (w0_out, w1_out, w2_out) = bash_s(w0, w1, w2, 8, 53, 14, 1);
 
-        let (w0_out, w1_out, w2_out) = bash_s(w0, w1, w2, 8, 53, 14, 1);
-
-        assert_eq!(w0_out, 0x479E76129979DC5Fu64.swap_bytes());
-        assert_eq!(w1_out, 0x0F2B2C93ED128EDDu64.swap_bytes());
-        assert_eq!(w2_out, 0x41009B1B112DFEF3u64.swap_bytes());
-    }
+    assert_eq!(w0_out, 0x479E76129979DC5Fu64.swap_bytes());
+    assert_eq!(w1_out, 0x0F2B2C93ED128EDDu64.swap_bytes());
+    assert_eq!(w2_out, 0x41009B1B112DFEF3u64.swap_bytes());
 }
