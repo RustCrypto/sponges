@@ -77,11 +77,12 @@ jobs:
           toolchain: ${{ matrix.rust }}
           targets: ${{ matrix.target }}
       - run: cargo check --no-default-features --target ${{ matrix.target }}
-      - run: cargo check --target ${{ matrix.target }}
-      - run: cargo check --features no_unroll --target ${{ matrix.target }}
+      - run: cargo check --features asm,no_unroll --target ${{ matrix.target }}
       - run: cargo test --no-default-features --target ${{ matrix.target }}
       - run: cargo test --target ${{ matrix.target }}
+      - run: cargo test --features asm --target ${{ matrix.target }}
       - run: cargo test --features no_unroll --target ${{ matrix.target }}
+      - run: cargo test --features asm,no_unroll --target ${{ matrix.target }}
 
   test-simd:
     runs-on: ubuntu-latest
