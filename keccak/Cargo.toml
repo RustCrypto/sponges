@@ -22,4 +22,4 @@ no_unroll = [] # Do no unroll loops for binary size reduction
 simd = []      # Use core::simd (nightly-only)
 
 [target.'cfg(target_arch = "aarch64")'.dependencies]
-cpufeatures = "0.2"
+cpufeatures = "0.3"
