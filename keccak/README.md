@@ -1,4 +1,4 @@
-# RustCrypto: Keccak Sponge Function
+# [RustCrypto]: Keccak Sponge Function
 
 [![crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
@@ -7,7 +7,7 @@
 ![Rust Version][rustc-image]
 [![Project Chat][chat-image]][chat-link]
 
-Pure Rust implementation of the [Keccak Sponge Function][1] including the keccak-f
+Pure Rust implementation of the [Keccak Sponge Function][keccak] including the keccak-f
 and keccak-p variants.
 
 [Documentation][docs-link]
@@ -60,7 +60,8 @@ dual licensed as above, without any additional terms or conditions.
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/369879-sponges
 
-[//]: # (general links)
+[//]: # (links)
 
-[1]: https://keccak.team/keccak.html
+[RustCrypto]: https://github.com/RustCrypto
+[keccak]: https://keccak.team/keccak.html
 [`sha3`]: https://github.com/RustCrypto/hashes/tree/master/sha3

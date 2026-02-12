@@ -1,22 +1,18 @@
-// Copyright 2021-2022 Sebastian Ramacher
-// SPDX-License-Identifier: Apache-2.0 OR MIT
-
 #![no_std]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc = include_str!("../README.md")]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg"
 )]
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
 
-use core::mem::size_of;
 #[cfg(feature = "zeroize")]
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 /// Produce mask for padding.
 #[inline(always)]
+#[must_use]
 pub const fn pad(n: usize) -> u64 {
     0x80_u64 << (56 - 8 * n)
 }
@@ -31,6 +27,7 @@ const fn round_constant(round: u64) -> u64 {
 ///
 /// The permutation operates on a state of 320 bits represented as 5 64 bit words.
 #[derive(Clone, Debug, Default)]
+#[allow(missing_copy_implementations)]
 pub struct State {
     x: [u64; 5],
 }
@@ -68,6 +65,7 @@ const fn round(x: [u64; 5], c: u64) -> [u64; 5] {
 
 impl State {
     /// Instantiate new state from the given values.
+    #[must_use]
     pub fn new(x0: u64, x1: u64, x2: u64, x3: u64, x4: u64) -> Self {
         State {
             x: [x0, x1, x2, x3, x4],
@@ -181,6 +179,7 @@ impl State {
     }
 
     /// Convert state to bytes.
+    #[must_use]
     pub fn as_bytes(&self) -> [u8; 40] {
         let mut bytes = [0u8; size_of::<u64>() * 5];
         for (dst, src) in bytes.chunks_exact_mut(size_of::<u64>()).zip(self.x) {
@@ -227,15 +226,16 @@ impl TryFrom<&[u8]> for State {
     type Error = ();
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        if value.len() != core::mem::size_of::<u64>() * 5 {
+        if value.len() != size_of::<u64>() * 5 {
             return Err(());
         }
 
         let mut state = Self::default();
-        for (src, dst) in value
-            .chunks_exact(core::mem::size_of::<u64>())
-            .zip(state.x.iter_mut())
-        {
+
+        // TODO(tarcieri): use `[T]::as_chunks` when MSRV 1.88
+        #[allow(clippy::unwrap_in_result, reason = "MSRV")]
+        #[allow(clippy::unwrap_used, reason = "MSRV")]
+        for (src, dst) in value.chunks_exact(size_of::<u64>()).zip(state.x.iter_mut()) {
             *dst = u64::from_be_bytes(src.try_into().unwrap());
         }
         Ok(state)
@@ -245,10 +245,10 @@ impl TryFrom<&[u8]> for State {
 impl From<&[u8; size_of::<u64>() * 5]> for State {
     fn from(value: &[u8; size_of::<u64>() * 5]) -> Self {
         let mut state = Self::default();
-        for (src, dst) in value
-            .chunks_exact(core::mem::size_of::<u64>())
-            .zip(state.x.iter_mut())
-        {
+
+        // TODO(tarcieri): use `[T]::as_chunks` when MSRV 1.88
+        #[allow(clippy::unwrap_used, reason = "MSRV")]
+        for (src, dst) in value.chunks_exact(size_of::<u64>()).zip(state.x.iter_mut()) {
             *dst = u64::from_be_bytes(src.try_into().unwrap());
         }
         state

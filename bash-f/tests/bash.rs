@@ -1,3 +1,5 @@
+//! bash-f tests
+
 /// Test vector from Table A.2 of STB 34.101.77-2020.
 #[test]
 fn test_bash_f_table_a2() {
@@ -58,8 +60,8 @@ fn test_bash_f_table_a2() {
         0x7CED8E3F8B6E058E,
     ];
 
-    let mut state = input.map(|x| x.swap_bytes());
-    let expected = expected.map(|x| x.swap_bytes());
+    let mut state = input.map(u64::swap_bytes);
+    let expected = expected.map(u64::swap_bytes);
 
     bash_f::bash_f(&mut state);
 

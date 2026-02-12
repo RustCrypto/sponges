@@ -1,3 +1,5 @@
+//! keccak benchmarks
+
 #![feature(test)]
 #![cfg_attr(feature = "simd", feature(portable_simd))]
 

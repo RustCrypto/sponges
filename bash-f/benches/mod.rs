@@ -1,3 +1,5 @@
+//! bash-f benchmarks
+
 #![feature(test)]
 extern crate test;
 
