@@ -18,8 +18,8 @@ easy to implement.
 Ascon is a family of lightweight algorithms built on a core permutation
 algorithm. These algorithms include:
 
-- [x] [`ascon-aead`]: Authenticated Encryption with Associated Data
-- [x] [`ascon-hash`]: Hash functions and extendible-output functions (XOF)
+- [x] [`ascon-aead128`]: Authenticated Encryption with Associated Data
+- [x] [`ascon-hash256`]: Hash functions and extendible-output functions (XOF)
 - [ ] Pseudo-random functions (PRF) and message authentication codes (MAC)
 
 Ascon has been selected as [new standard for lightweight cryptography] in the
@@ -64,8 +64,8 @@ dual licensed as above, without any additional terms or conditions.
 
 [//]: # (links)
 
-[`ascon-aead`]: https://github.com/RustCrypto/AEADs/tree/master/ascon-aead
-[`ascon-hash`]: https://github.com/RustCrypto/hashes/tree/master/ascon-hash
+[`ascon-aead128`]: https://docs.rs/ascon-aead128
+[`ascon-hash256`]: https://docs.rs/ascon-hash256
 [RustCrypto]: https://github.com/rustcrypto
 [Ascon]: https://ascon.iaik.tugraz.at/
 [New standard for lightweight cryptography]: https://www.nist.gov/news-events/news/2023/02/nist-selects-lightweight-cryptography-algorithms-protect-small-devices

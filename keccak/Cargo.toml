@@ -23,3 +23,6 @@ simd = []      # Use core::simd (nightly-only)
 
 [target.'cfg(target_arch = "aarch64")'.dependencies]
 cpufeatures = "0.3"
+
+[lints]
+workspace = true

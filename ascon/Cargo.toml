@@ -22,5 +22,8 @@ zeroize = { version = "1.6", default-features = false, optional = true }
 [features]
 no_unroll = [] # Do not unroll loops for binary size reduction
 
+[lints]
+workspace = true
+
 [package.metadata.docs.rs]
 rustdoc-args = ["--cfg", "docsrs"]

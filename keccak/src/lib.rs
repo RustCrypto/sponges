@@ -1,10 +1,16 @@
-//! Keccak [sponge function](https://en.wikipedia.org/wiki/Sponge_function).
+#![no_std]
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(feature = "simd", feature(portable_simd))]
+#![doc = include_str!("../README.md")]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
+    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg"
+)]
+#![allow(non_upper_case_globals)]
+
+//! ## Usage
 //!
-//! If you are looking for SHA-3 hash functions take a look at [`sha3`][1] and
-//! [`tiny-keccak`][2] crates.
-//!
-//! To disable loop unrolling (e.g. for constraint targets) use `no_unroll`
-//! feature.
+//! To disable loop unrolling (e.g. for constrained targets) use `no_unroll` feature.
 //!
 //! ```
 //! // Test vectors are from KeccakCodePackage
@@ -35,23 +41,6 @@
 //!
 //! [1]: https://docs.rs/sha3
 //! [2]: https://docs.rs/tiny-keccak
-
-#![no_std]
-#![cfg_attr(docsrs, feature(doc_cfg))]
-#![cfg_attr(feature = "simd", feature(portable_simd))]
-#![doc(
-    html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
-    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg"
-)]
-#![allow(non_upper_case_globals)]
-#![warn(
-    clippy::mod_module_files,
-    clippy::unwrap_used,
-    missing_docs,
-    rust_2018_idioms,
-    unused_lifetimes,
-    unused_qualifications
-)]
 
 use core::{
     fmt::Debug,
@@ -126,6 +115,7 @@ pub trait LaneSize:
     fn truncate_rc(rc: u64) -> Self;
 
     /// Rotate left function.
+    #[must_use]
     fn rotate_left(self, n: u32) -> Self;
 }
 
@@ -179,20 +169,22 @@ impl_keccak!(p800, f800, u32);
 #[cfg(not(all(target_arch = "aarch64", feature = "asm")))]
 impl_keccak!(p1600, f1600, u64);
 
-/// Keccak-p[1600, rc] permutation.
+/// `Keccak-p[1600, rc]` permutation.
 #[cfg(all(target_arch = "aarch64", feature = "asm"))]
 pub fn p1600(state: &mut [u64; PLEN], round_count: usize) {
     if armv8_sha3_intrinsics::get() {
+        // SAFETY: we just performed runtime CPU feature detection above
         unsafe { armv8::p1600_armv8_sha3_asm(state, round_count) }
     } else {
         keccak_p(state, round_count);
     }
 }
 
-/// Keccak-f[1600] permutation.
+/// `Keccak-f[1600]` permutation.
 #[cfg(all(target_arch = "aarch64", feature = "asm"))]
 pub fn f1600(state: &mut [u64; PLEN]) {
     if armv8_sha3_intrinsics::get() {
+        // SAFETY: we just performed runtime CPU feature detection above
         unsafe { armv8::p1600_armv8_sha3_asm(state, 24) }
     } else {
         keccak_p(state, u64::KECCAK_F_ROUND_COUNT);
@@ -230,12 +222,16 @@ pub mod simd {
     impl_keccak!(p1600x8, f1600x8, u64x8);
 }
 
+/// Generic Keccak-p sponge function.
+///
+/// # Panics
+/// If the round count is greater than `L::KECCAK_F_ROUND_COUNT`.
 #[allow(unused_assignments)]
-/// Generic Keccak-p sponge function
 pub fn keccak_p<L: LaneSize>(state: &mut [L; PLEN], round_count: usize) {
-    if round_count > L::KECCAK_F_ROUND_COUNT {
-        panic!("A round_count greater than KECCAK_F_ROUND_COUNT is not supported!");
-    }
+    assert!(
+        round_count <= L::KECCAK_F_ROUND_COUNT,
+        "A round_count greater than KECCAK_F_ROUND_COUNT is not supported!"
+    );
 
     // https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf#page=25
     // "the rounds of KECCAK-p[b, nr] match the last rounds of KECCAK-f[b]"

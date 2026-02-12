@@ -1,4 +1,4 @@
-# RustCrypto: bash-f
+# [RustCrypto]: bash-f
 
 [![crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
@@ -39,3 +39,7 @@ dual licensed as above, without any additional terms or conditions.
 [rustc-image]: https://img.shields.io/badge/rustc-1.85+-blue.svg
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/369879-sponges
+
+[//]: # (links)
+
+[RustCrypto]: https://github.com/RustCrypto
