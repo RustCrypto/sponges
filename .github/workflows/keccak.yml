@@ -41,7 +41,10 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           targets: ${{ matrix.target }}
-      - run: cargo build --no-default-features --target ${{ matrix.target }}
+      - run: cargo build --target ${{ matrix.target }}
+      - env:
+          RUSTFLAGS: '-Dwarnings --cfg keccak_backend="soft-compact"'
+        run: cargo build --target ${{ matrix.target }}
 
   minimal-versions:
     uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
@@ -76,13 +79,14 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           targets: ${{ matrix.target }}
-      - run: cargo check --no-default-features --target ${{ matrix.target }}
-      - run: cargo check --features asm,no_unroll --target ${{ matrix.target }}
+      - run: cargo check --features asm --target ${{ matrix.target }}
       - run: cargo test --no-default-features --target ${{ matrix.target }}
       - run: cargo test --target ${{ matrix.target }}
       - run: cargo test --features asm --target ${{ matrix.target }}
-      - run: cargo test --features no_unroll --target ${{ matrix.target }}
-      - run: cargo test --features asm,no_unroll --target ${{ matrix.target }}
+      - run: cargo test --features asm --release --target ${{ matrix.target }}
+      - env:
+          RUSTFLAGS: '-Dwarnings --cfg keccak_backend="soft-compact"'
+        run: cargo test --release --target ${{ matrix.target }}
 
   test-simd:
     runs-on: ubuntu-latest
@@ -95,7 +99,7 @@ jobs:
       - run: cargo check --features simd
       - run: cargo test --features simd
 
-  miri:
+  test-miri:
     runs-on: ubuntu-latest
     env:
       MIRIFLAGS: "-Zmiri-symbolic-alignment-check -Zmiri-strict-provenance"
@@ -117,8 +121,10 @@ jobs:
         run: |
           cargo miri test --target ${{ matrix.target }} --no-default-features
           cargo miri test --target ${{ matrix.target }}
-          cargo miri test --target ${{ matrix.target }} --features no_unroll
           cargo miri test --target ${{ matrix.target }} --features simd
+      - env:
+          RUSTFLAGS: '-Dwarnings --cfg keccak_backend="soft-compact"'
+        run: cargo miri test --release --target ${{ matrix.target }}
 
   aarch64-sha3:
     needs: set-msrv
