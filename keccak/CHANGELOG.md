@@ -14,6 +14,12 @@ TODO: fill out rest of changelog
 
 [#91]: https://github.com/RustCrypto/sponges/pull/91
 
+## 0.1.6 (2026-02-13)
+### Fixed
+- ARMv8 `asm!` invocation had incorrect operand type ([#103])
+
+[#103]: https://github.com/RustCrypto/sponges/pull/103
+
 ## 0.1.5 (2024-01-12)
 ### Changed
 - Enable ARMv8 ASM backend for `p1600` ([#68])
