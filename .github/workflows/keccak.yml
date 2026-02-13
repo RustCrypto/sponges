@@ -50,7 +50,6 @@ jobs:
     uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
     with:
       working-directory: ${{ github.workflow }}
-      stable-cmd: cargo hack test --release --feature-powerset --skip simd # `simd` requires nightly
 
   test:
     needs: set-msrv
@@ -79,25 +78,27 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           targets: ${{ matrix.target }}
-      - run: cargo check --features asm --target ${{ matrix.target }}
-      - run: cargo test --no-default-features --target ${{ matrix.target }}
+      - run: cargo check --target ${{ matrix.target }}
       - run: cargo test --target ${{ matrix.target }}
-      - run: cargo test --features asm --target ${{ matrix.target }}
-      - run: cargo test --features asm --release --target ${{ matrix.target }}
+      - run: cargo test --release --target ${{ matrix.target }}
+      - env:
+          RUSTFLAGS: '-Dwarnings --cfg keccak_backend="armv8_asm"'
+        run: cargo test --release --target ${{ matrix.target }}
       - env:
           RUSTFLAGS: '-Dwarnings --cfg keccak_backend="soft-compact"'
         run: cargo test --release --target ${{ matrix.target }}
 
   test-simd:
     runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: '-Dwarnings --cfg keccak_backend="simd"'
     steps:
       - uses: actions/checkout@v4
       - uses: RustCrypto/actions/cargo-cache@master
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: nightly
-      - run: cargo check --features simd
-      - run: cargo test --features simd
+      - run: cargo test
 
   test-miri:
     runs-on: ubuntu-latest
@@ -113,15 +114,15 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: nightly
-      - name: Install Miri
-        run: |
-          rustup component add miri
-          cargo miri setup
-      - name: Test with Miri
-        run: |
-          cargo miri test --target ${{ matrix.target }} --no-default-features
-          cargo miri test --target ${{ matrix.target }}
-          cargo miri test --target ${{ matrix.target }} --features simd
+          components: miri
+      - run: cargo miri setup
+      - run: cargo miri test --target ${{ matrix.target }}
+      - env:
+          RUSTFLAGS: '-Dwarnings --cfg keccak_backend="armv8_asm"'
+        run: cargo miri test --release --target ${{ matrix.target }}
+      - env:
+          RUSTFLAGS: '-Dwarnings --cfg keccak_backend="simd"'
+        run: cargo miri test --release --target ${{ matrix.target }}
       - env:
           RUSTFLAGS: '-Dwarnings --cfg keccak_backend="soft-compact"'
         run: cargo miri test --release --target ${{ matrix.target }}
@@ -152,9 +153,9 @@ jobs:
           tar -C /tmp -xzf /tmp/binaries.tar.gz
           mv /tmp/cross ~/.cargo/bin
         shell: bash
-      - name: cross test
+      - env:
+          RUSTFLAGS: '-C target-feature=+sha3 --cfg keccak_backend="armv8_asm"'
         run: |
           cd keccak
           # Cross doesn't enable `sha3` by default, but QEMU supports it.
-          export RUSTFLAGS="-C target-feature=+sha3"
           cross test --target aarch64-unknown-linux-gnu --no-default-features

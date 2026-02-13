@@ -1,6 +1,6 @@
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![cfg_attr(feature = "simd", feature(portable_simd))]
+#![cfg_attr(keccak_backend = "simd", feature(portable_simd))]
 #![doc = include_str!("../README.md")]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
@@ -51,10 +51,10 @@ use core::{
 #[rustfmt::skip]
 mod unroll;
 
-#[cfg(all(target_arch = "aarch64", feature = "asm"))]
+#[cfg(all(target_arch = "aarch64", keccak_backend = "armv8_asm"))]
 mod armv8;
 
-#[cfg(all(target_arch = "aarch64", feature = "asm"))]
+#[cfg(all(target_arch = "aarch64", keccak_backend = "armv8_asm"))]
 cpufeatures::new!(armv8_sha3_intrinsics, "sha3");
 
 const PLEN: usize = 25;
@@ -166,11 +166,11 @@ impl_keccak!(p200, f200, u8);
 impl_keccak!(p400, f400, u16);
 impl_keccak!(p800, f800, u32);
 
-#[cfg(not(all(target_arch = "aarch64", feature = "asm")))]
+#[cfg(not(all(target_arch = "aarch64", keccak_backend = "armv8_asm")))]
 impl_keccak!(p1600, f1600, u64);
 
 /// `Keccak-p[1600, rc]` permutation.
-#[cfg(all(target_arch = "aarch64", feature = "asm"))]
+#[cfg(all(target_arch = "aarch64", keccak_backend = "armv8_asm"))]
 pub fn p1600(state: &mut [u64; PLEN], round_count: usize) {
     if armv8_sha3_intrinsics::get() {
         // SAFETY: we just performed runtime CPU feature detection above
@@ -181,7 +181,7 @@ pub fn p1600(state: &mut [u64; PLEN], round_count: usize) {
 }
 
 /// `Keccak-f[1600]` permutation.
-#[cfg(all(target_arch = "aarch64", feature = "asm"))]
+#[cfg(all(target_arch = "aarch64", keccak_backend = "armv8_asm"))]
 pub fn f1600(state: &mut [u64; PLEN]) {
     if armv8_sha3_intrinsics::get() {
         // SAFETY: we just performed runtime CPU feature detection above
@@ -191,7 +191,7 @@ pub fn f1600(state: &mut [u64; PLEN]) {
     }
 }
 
-#[cfg(feature = "simd")]
+#[cfg(keccak_backend = "simd")]
 /// SIMD implementations for Keccak-f1600 sponge function
 pub mod simd {
     use crate::{LaneSize, PLEN, keccak_p};
@@ -413,7 +413,7 @@ mod tests {
         keccak_f::<u64>(state_first, state_second);
     }
 
-    #[cfg(feature = "simd")]
+    #[cfg(keccak_backend = "simd")]
     mod simd {
         use super::keccak_f;
         use core::simd::{u64x2, u64x4, u64x8};
