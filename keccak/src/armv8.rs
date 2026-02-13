@@ -124,9 +124,9 @@ pub unsafe fn p1600_armv8_sha3_asm(state: &mut [u64; 25], round_count: usize) {
             st1.1d	{{v20-v23}}, [x0], #32
             st1.1d	{{v24}},     [x0]
         ",
-            in("x0") state.as_mut_ptr(),
-            in("x1") crate::RC[24-round_count..].as_ptr(),
-            in("x8") round_count,
+            inout("x0") state.as_mut_ptr() => _,
+            inout("x1") crate::RC[24-round_count..].as_ptr() => _,
+            inout("x8") round_count => _,
             clobber_abi("C"),
             options(nostack)
         );
