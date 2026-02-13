@@ -1,5 +1,5 @@
 /// unroll5
-#[cfg(not(feature = "no_unroll"))]
+#[cfg(not(keccak_backend = "soft-compact"))]
 #[macro_export]
 macro_rules! unroll5 {
     ($var:ident, $body:block) => {
@@ -12,7 +12,7 @@ macro_rules! unroll5 {
 }
 
 /// unroll5
-#[cfg(feature = "no_unroll")]
+#[cfg(keccak_backend = "soft-compact")]
 #[macro_export]
 macro_rules! unroll5 {
     ($var:ident, $body:block) => {
@@ -21,7 +21,7 @@ macro_rules! unroll5 {
 }
 
 /// unroll24
-#[cfg(not(feature = "no_unroll"))]
+#[cfg(not(keccak_backend = "soft-compact"))]
 #[macro_export]
 macro_rules! unroll24 {
     ($var: ident, $body: block) => {
@@ -53,7 +53,7 @@ macro_rules! unroll24 {
 }
 
 /// unroll24
-#[cfg(feature = "no_unroll")]
+#[cfg(keccak_backend = "soft-compact")]
 #[macro_export]
 macro_rules! unroll24 {
     ($var:ident, $body:block) => {
