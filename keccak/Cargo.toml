@@ -16,10 +16,6 @@ readme = "README.md"
 edition = "2024"
 rust-version = "1.85"
 
-[features]
-asm = []  # Use optimized assembly when available (currently only ARMv8)
-simd = [] # Use core::simd (nightly-only)
-
 [target.'cfg(target_arch = "aarch64")'.dependencies]
 cpufeatures = "0.3"
 
@@ -34,7 +30,7 @@ unused_qualifications = "warn"
 
 [lints.rust.unexpected_cfgs]
 level = "warn"
-check-cfg = ['cfg(keccak_backend, values("soft-compact"))']
+check-cfg = ['cfg(keccak_backend, values("armv8_asm", "simd", "soft-compact"))']
 
 [lints.clippy]
 borrow_as_ptr = "warn"
