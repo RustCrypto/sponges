@@ -251,6 +251,12 @@ impl AsMut<[u64; PLEN]> for KeccakP1600 {
     }
 }
 
+impl Default for KeccakP1600 {
+    fn default() -> Self {
+        Self::new(Default::default())
+    }
+}
+
 impl From<[u64; PLEN]> for KeccakP1600 {
     #[inline]
     fn from(state: [u64; PLEN]) -> Self {
