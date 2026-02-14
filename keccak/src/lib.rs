@@ -188,13 +188,13 @@ impl_keccak!(p1600, f1600, u64);
 /// rustflags = ['--cfg', 'keccak_backend="armv8_asm"']
 /// ```
 #[derive(Clone, Debug)]
-pub struct Keccak1600 {
+pub struct KeccakP1600 {
     state: [u64; PLEN],
     #[cfg(all(target_arch = "aarch64", keccak_backend = "armv8_asm"))]
     has_intrinsics: armv8_sha3_intrinsics::InitToken,
 }
 
-impl Keccak1600 {
+impl KeccakP1600 {
     /// Create a new 1600-bit Keccak state from the given input array.
     #[inline]
     #[must_use]
@@ -237,30 +237,30 @@ impl Keccak1600 {
     }
 }
 
-impl AsRef<[u64; PLEN]> for Keccak1600 {
+impl AsRef<[u64; PLEN]> for KeccakP1600 {
     #[inline]
     fn as_ref(&self) -> &[u64; PLEN] {
         &self.state
     }
 }
 
-impl AsMut<[u64; PLEN]> for Keccak1600 {
+impl AsMut<[u64; PLEN]> for KeccakP1600 {
     #[inline]
     fn as_mut(&mut self) -> &mut [u64; PLEN] {
         &mut self.state
     }
 }
 
-impl From<[u64; PLEN]> for Keccak1600 {
+impl From<[u64; PLEN]> for KeccakP1600 {
     #[inline]
     fn from(state: [u64; PLEN]) -> Self {
         Self::new(state)
     }
 }
 
-impl From<Keccak1600> for [u64; PLEN] {
+impl From<KeccakP1600> for [u64; PLEN] {
     #[inline]
-    fn from(keccak: Keccak1600) -> Self {
+    fn from(keccak: KeccakP1600) -> Self {
         keccak.into_inner()
     }
 }
@@ -359,7 +359,7 @@ pub fn keccak_p<L: LaneSize>(state: &mut [L; PLEN], round_count: usize) {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Keccak1600, LaneSize, PLEN, keccak_p};
+    use crate::{KeccakP1600, LaneSize, PLEN, keccak_p};
 
     fn keccak_f<L: LaneSize>(state_first: [L; PLEN], state_second: [L; PLEN]) {
         let mut state = [L::default(); PLEN];
@@ -486,7 +486,7 @@ mod tests {
 
         keccak_f::<u64>(state_first, state_second);
 
-        let mut keccak = Keccak1600::new(state_first);
+        let mut keccak = KeccakP1600::new(state_first);
         keccak.f1600();
         assert_eq!(keccak.into_inner(), state_second);
     }
