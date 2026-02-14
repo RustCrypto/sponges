@@ -1,10 +1,12 @@
+use crate::PLEN;
+
 /// Keccak-p1600 on ARMv8.4-A with `FEAT_SHA3`.
 ///
 /// See p. K12.2.2  p. 11,749 of the ARM Reference manual.
 /// Adapted from the Keccak-f1600 implementation in the XKCP/K12.
 /// see <https://github.com/XKCP/K12/blob/df6a21e6d1f34c1aa36e8d702540899c97dba5a0/lib/ARMv8Asha3/KeccakP-1600-ARMv8Asha3.S#L69>
 #[target_feature(enable = "sha3")]
-pub unsafe fn p1600_armv8_sha3_asm(state: &mut [u64; 25], round_count: usize) {
+pub unsafe fn p1600_armv8_sha3_asm(state: &mut [u64; PLEN], round_count: usize) {
     assert!(
         matches!(round_count, 1..=24),
         "invalid round count (must be 1-24): {}",
