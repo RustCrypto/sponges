@@ -39,6 +39,25 @@
 //! ]);
 //! ```
 //!
+//! ## Intrinsics support
+//! ### ARMv8 `asm!`
+//! The [`KeccakP1600`] struct supports the use of optimized inline assembly implementations of
+//! specialized intrinsics for ARMv8 CPUs along with runtime CPU feature detection, but requires
+//! setting the `keccak_backend="armv8_asm"` configuration option via `RUSTFLAGS`, e.g. by setting
+//! an environment variable:
+//!
+//! ```console
+//! $ RUSTFLAGS='--cfg keccak_backend="armv8_asm"' cargo build --release
+//! ```
+//!
+//! Or you can persistently configure it for your project in `.cargo/config.toml`:
+//!
+//! ```toml
+//! # In .cargo/config.toml
+//! [build]
+//! rustflags = ['--cfg', 'keccak_backend="armv8_asm"']
+//! ```
+//!
 //! [1]: https://docs.rs/sha3
 //! [2]: https://docs.rs/tiny-keccak
 
@@ -169,24 +188,6 @@ impl_keccak!(p1600, f1600, u64);
 
 /// Keccak permutation with `b=1600` state (i.e. for Keccak-p1600/Keccak-f1600) with optional CPU
 /// feature detection support.
-///
-/// ## ARMv8 intrinsics (`asm!`)
-/// This struct supports the use of optimized inline assembly implementations of specialized
-/// intrinsics for ARMv8 CPUs along with runtime CPU feature detection, but requires setting the
-/// `keccak_backend="armv8_asm"` configuration option via `RUSTFLAGS`, e.g. by setting an
-/// environment variable:
-///
-/// ```console
-/// $ RUSTFLAGS='--cfg keccak_backend="armv8_asm"' cargo build --release
-/// ```
-///
-/// Or you can persistently configure it for your project in `.cargo/config.toml`:
-///
-/// ```toml
-/// # In .cargo/config.toml
-/// [build]
-/// rustflags = ['--cfg', 'keccak_backend="armv8_asm"']
-/// ```
 #[derive(Clone, Debug)]
 pub struct KeccakP1600 {
     state: [u64; PLEN],
@@ -204,12 +205,6 @@ impl KeccakP1600 {
             #[cfg(all(target_arch = "aarch64", keccak_backend = "armv8_asm"))]
             has_intrinsics: armv8_sha3_intrinsics::init(),
         }
-    }
-
-    /// Extract the state array.
-    #[must_use]
-    pub fn into_inner(self) -> [u64; PLEN] {
-        self.state
     }
 
     /// `Keccak-p[1600, rc]` permutation.
@@ -234,6 +229,12 @@ impl KeccakP1600 {
         }
 
         f1600(&mut self.state);
+    }
+
+    /// Extract the state array.
+    #[must_use]
+    pub fn into_inner(self) -> [u64; PLEN] {
+        self.state
     }
 }
 
@@ -261,6 +262,13 @@ impl From<[u64; PLEN]> for KeccakP1600 {
     #[inline]
     fn from(state: [u64; PLEN]) -> Self {
         Self::new(state)
+    }
+}
+
+impl From<&[u64; PLEN]> for KeccakP1600 {
+    #[inline]
+    fn from(state: &[u64; PLEN]) -> Self {
+        Self::new(*state)
     }
 }
 
