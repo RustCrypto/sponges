@@ -16,11 +16,10 @@ readme = "README.md"
 edition = "2024"
 rust-version = "1.85"
 
-[target.'cfg(target_arch = "aarch64")'.dependencies]
+[target.'cfg(all(target_arch = "aarch64", keccak_backend = "armv8_asm"))'.dependencies]
 cpufeatures = "0.3"
 
 [lints.rust]
-missing_copy_implementations = "warn"
 missing_debug_implementations = "warn"
 missing_docs = "warn"
 trivial_casts = "warn"

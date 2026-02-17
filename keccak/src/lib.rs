@@ -39,6 +39,25 @@
 //! ]);
 //! ```
 //!
+//! ## Intrinsics support
+//! ### ARMv8 `asm!`
+//! The [`KeccakP1600`] struct supports the use of optimized inline assembly implementations of
+//! specialized intrinsics for ARMv8 CPUs along with runtime CPU feature detection, but requires
+//! setting the `keccak_backend="armv8_asm"` configuration option via `RUSTFLAGS`, e.g. by setting
+//! an environment variable:
+//!
+//! ```console
+//! $ RUSTFLAGS='--cfg keccak_backend="armv8_asm"' cargo build --release
+//! ```
+//!
+//! Or you can persistently configure it for your project in `.cargo/config.toml`:
+//!
+//! ```toml
+//! # In .cargo/config.toml
+//! [build]
+//! rustflags = ['--cfg', 'keccak_backend="armv8_asm"']
+//! ```
+//!
 //! [1]: https://docs.rs/sha3
 //! [2]: https://docs.rs/tiny-keccak
 
@@ -165,29 +184,98 @@ macro_rules! impl_keccak {
 impl_keccak!(p200, f200, u8);
 impl_keccak!(p400, f400, u16);
 impl_keccak!(p800, f800, u32);
-
-#[cfg(not(all(target_arch = "aarch64", keccak_backend = "armv8_asm")))]
 impl_keccak!(p1600, f1600, u64);
 
-/// `Keccak-p[1600, rc]` permutation.
-#[cfg(all(target_arch = "aarch64", keccak_backend = "armv8_asm"))]
-pub fn p1600(state: &mut [u64; PLEN], round_count: usize) {
-    if armv8_sha3_intrinsics::get() {
-        // SAFETY: we just performed runtime CPU feature detection above
-        unsafe { armv8::p1600_armv8_sha3_asm(state, round_count) }
-    } else {
-        keccak_p(state, round_count);
+/// Keccak permutation with `b=1600` state (i.e. for Keccak-p1600/Keccak-f1600) with optional CPU
+/// feature detection support.
+#[derive(Clone, Debug)]
+pub struct KeccakP1600 {
+    state: [u64; PLEN],
+    #[cfg(all(target_arch = "aarch64", keccak_backend = "armv8_asm"))]
+    has_intrinsics: armv8_sha3_intrinsics::InitToken,
+}
+
+impl KeccakP1600 {
+    /// Create a new 1600-bit Keccak state from the given input array.
+    #[inline]
+    #[must_use]
+    pub fn new(state: [u64; PLEN]) -> Self {
+        Self {
+            state,
+            #[cfg(all(target_arch = "aarch64", keccak_backend = "armv8_asm"))]
+            has_intrinsics: armv8_sha3_intrinsics::init(),
+        }
+    }
+
+    /// `Keccak-p[1600, rc]` permutation.
+    pub fn p1600(&mut self, round_count: usize) {
+        #[cfg(all(target_arch = "aarch64", keccak_backend = "armv8_asm"))]
+        if self.has_intrinsics.get() {
+            // SAFETY: we just performed runtime CPU feature detection above
+            unsafe { armv8::p1600_armv8_sha3_asm(&mut self.state, round_count) }
+            return;
+        }
+
+        p1600(&mut self.state, round_count);
+    }
+
+    /// `Keccak-f[1600]` permutation.
+    pub fn f1600(&mut self) {
+        #[cfg(all(target_arch = "aarch64", keccak_backend = "armv8_asm"))]
+        if self.has_intrinsics.get() {
+            // SAFETY: we just performed runtime CPU feature detection above
+            unsafe { armv8::p1600_armv8_sha3_asm(&mut self.state, u64::KECCAK_F_ROUND_COUNT) }
+            return;
+        }
+
+        f1600(&mut self.state);
+    }
+
+    /// Extract the state array.
+    #[must_use]
+    pub fn into_inner(self) -> [u64; PLEN] {
+        self.state
     }
 }
 
-/// `Keccak-f[1600]` permutation.
-#[cfg(all(target_arch = "aarch64", keccak_backend = "armv8_asm"))]
-pub fn f1600(state: &mut [u64; PLEN]) {
-    if armv8_sha3_intrinsics::get() {
-        // SAFETY: we just performed runtime CPU feature detection above
-        unsafe { armv8::p1600_armv8_sha3_asm(state, 24) }
-    } else {
-        keccak_p(state, u64::KECCAK_F_ROUND_COUNT);
+impl AsRef<[u64; PLEN]> for KeccakP1600 {
+    #[inline]
+    fn as_ref(&self) -> &[u64; PLEN] {
+        &self.state
+    }
+}
+
+impl AsMut<[u64; PLEN]> for KeccakP1600 {
+    #[inline]
+    fn as_mut(&mut self) -> &mut [u64; PLEN] {
+        &mut self.state
+    }
+}
+
+impl Default for KeccakP1600 {
+    fn default() -> Self {
+        Self::new(Default::default())
+    }
+}
+
+impl From<[u64; PLEN]> for KeccakP1600 {
+    #[inline]
+    fn from(state: [u64; PLEN]) -> Self {
+        Self::new(state)
+    }
+}
+
+impl From<&[u64; PLEN]> for KeccakP1600 {
+    #[inline]
+    fn from(state: &[u64; PLEN]) -> Self {
+        Self::new(*state)
+    }
+}
+
+impl From<KeccakP1600> for [u64; PLEN] {
+    #[inline]
+    fn from(keccak: KeccakP1600) -> Self {
+        keccak.into_inner()
     }
 }
 
@@ -285,7 +373,7 @@ pub fn keccak_p<L: LaneSize>(state: &mut [L; PLEN], round_count: usize) {
 
 #[cfg(test)]
 mod tests {
-    use crate::{LaneSize, PLEN, keccak_p};
+    use crate::{KeccakP1600, LaneSize, PLEN, keccak_p};
 
     fn keccak_f<L: LaneSize>(state_first: [L; PLEN], state_second: [L; PLEN]) {
         let mut state = [L::default(); PLEN];
@@ -411,6 +499,10 @@ mod tests {
         ];
 
         keccak_f::<u64>(state_first, state_second);
+
+        let mut keccak = KeccakP1600::new(state_first);
+        keccak.f1600();
+        assert_eq!(keccak.into_inner(), state_second);
     }
 
     #[cfg(keccak_backend = "simd")]
