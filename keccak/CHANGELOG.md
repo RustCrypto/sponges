@@ -5,14 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.2.0 (UNRELEASED)
+## 0.2.0 (2026-02-26)
 
-TODO: fill out rest of changelog
+### Added
+- `keccak_backend` configuration parameter with `armv8_asm`, `simd`,
+  and `soft-compact` values ([#105], [#106])
+- `KeccakP1600` struct ([#107])
+
+### Changed
+- Edition changed to 2024 and MSRV bumped to 1.85 ([#89])
+- Bump `cpufeatures` dependency to v0.3 ([#99])
+
+### Removed
+- `asm`, `simd`, and `no_unroll` crate features in favor of
+  the `keccak_backend` configuration parameter ([#105], [#106])
+- `f1600` and `p1600` functions in favor of the `KeccakP1600` struct ([#107])
 
 ### Fixed
 - Use `doc_cfg` in place of removed `doc_auto_cfg` feature ([#91])
 
+[#89]: https://github.com/RustCrypto/sponges/pull/89
 [#91]: https://github.com/RustCrypto/sponges/pull/91
+[#99]: https://github.com/RustCrypto/sponges/pull/99
+[#105]: https://github.com/RustCrypto/sponges/pull/105
+[#106]: https://github.com/RustCrypto/sponges/pull/106
+[#107]: https://github.com/RustCrypto/sponges/pull/107
 
 ## 0.1.6 (2026-02-13)
 ### Fixed
