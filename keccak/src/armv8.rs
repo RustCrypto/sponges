@@ -1,4 +1,7 @@
-use crate::PLEN;
+#![allow(unsafe_op_in_unsafe_fn)]
+
+use crate::{PLEN, RC};
+use core::{arch::aarch64::*, array};
 
 /// Keccak-p1600 on ARMv8.4-A with `FEAT_SHA3`.
 ///
@@ -6,137 +9,138 @@ use crate::PLEN;
 /// Adapted from the Keccak-f1600 implementation in the XKCP/K12.
 /// see <https://github.com/XKCP/K12/blob/df6a21e6d1f34c1aa36e8d702540899c97dba5a0/lib/ARMv8Asha3/KeccakP-1600-ARMv8Asha3.S#L69>
 #[target_feature(enable = "sha3")]
-pub unsafe fn p1600_armv8_sha3_asm(state: &mut [u64; PLEN], round_count: usize) {
+pub unsafe fn p1600_armv8_sha3(state: &mut [u64; PLEN], round_count: usize) {
+    let mut s = [*state, Default::default()];
+    // SAFETY: both functions have the same safety invariants, namely they require the `sha3`
+    // target feature is available, and the caller is responsible for ensuring support
+    unsafe { p1600_armv8_sha3_times2(&mut s, round_count) };
+    *state = s[0];
+}
+
+/// Keccak-p1600 on ARMv8.4-A with `FEAT_SHA3` with support for 2 parallel states.
+///
+/// See p. K12.2.2  p. 11,749 of the ARM Reference manual.
+/// Adapted from the Keccak-f1600 implementation in the XKCP/K12.
+///
+/// <https://github.com/XKCP/K12/blob/df6a21e/lib/ARMv8Asha3/KeccakP-1600-ARMv8Asha3.S#L69>
+#[target_feature(enable = "sha3")]
+pub unsafe fn p1600_armv8_sha3_times2(state: &mut [[u64; PLEN]; 2], round_count: usize) {
     assert!(
         matches!(round_count, 1..=24),
         "invalid round count (must be 1-24): {}",
         round_count
     );
 
-    // SAFETY:
-    // - caller is responsible for ensuring that the target CPU is at least ARMv8.4-A with
-    //   `FEAT_SHA3` using runtime CPU feature detection
-    // - `round_count` is ensured to be in the range `1..=24` above
-    // - `state` is valid, aligned, and mutably borrowed as a Rust reference above
-    unsafe {
-        core::arch::asm!("
-            // Read state
-            ld1.1d {{ v0- v3}}, [x0], #32
-            ld1.1d {{ v4- v7}}, [x0], #32
-            ld1.1d {{ v8-v11}}, [x0], #32
-            ld1.1d {{v12-v15}}, [x0], #32
-            ld1.1d {{v16-v19}}, [x0], #32
-            ld1.1d {{v20-v23}}, [x0], #32
-            ld1.1d {{v24}},     [x0]
-            sub x0, x0, #192
+    let mut s: [uint64x2_t; PLEN] =
+        array::from_fn(|i| vcombine_u64(vcreate_u64(state[0][i]), vcreate_u64(state[1][i])));
 
-            // NOTE: This loop actually computes two f1600 functions in
-            // parallel, in both the lower and the upper 64-bit of the
-            // 128-bit registers v0-v24.
-            0:  sub	x8, x8, #1
+    for &rc in &RC[(24 - round_count)..] {
+        let (d0, d1, d2, d3, d4) = theta(&s);
+        let t = rho_pi(&s, d0, d1, d2, d3, d4);
+        s = chi_iota(&t, rc);
+    }
 
-            // Theta Calculations
-            eor3.16b   v25, v20, v15, v10
-            eor3.16b   v26, v21, v16, v11
-            eor3.16b   v27, v22, v17, v12
-            eor3.16b   v28, v23, v18, v13
-            eor3.16b   v29, v24, v19, v14
-            eor3.16b   v25, v25,  v5,  v0
-            eor3.16b   v26, v26,  v6,  v1
-            eor3.16b   v27, v27,  v7,  v2
-            eor3.16b   v28, v28,  v8,  v3
-            eor3.16b   v29, v29,  v9,  v4
-            rax1.2d    v30, v25, v27
-            rax1.2d    v31, v26, v28
-            rax1.2d    v27, v27, v29
-            rax1.2d    v28, v28, v25
-            rax1.2d    v29, v29, v26
-
-            // Rho and Phi
-            eor.16b     v0,  v0, v29
-            xar.2d     v25,  v1, v30, #64 -  1
-            xar.2d      v1,  v6, v30, #64 - 44
-            xar.2d      v6,  v9, v28, #64 - 20
-            xar.2d      v9, v22, v31, #64 - 61
-            xar.2d     v22, v14, v28, #64 - 39
-            xar.2d     v14, v20, v29, #64 - 18
-            xar.2d     v26,  v2, v31, #64 - 62
-            xar.2d      v2, v12, v31, #64 - 43
-            xar.2d     v12, v13, v27, #64 - 25
-            xar.2d     v13, v19, v28, #64 -  8
-            xar.2d     v19, v23, v27, #64 - 56
-            xar.2d     v23, v15, v29, #64 - 41
-            xar.2d     v15,  v4, v28, #64 - 27
-            xar.2d     v28, v24, v28, #64 - 14
-            xar.2d     v24, v21, v30, #64 -  2
-            xar.2d      v8,  v8, v27, #64 - 55
-            xar.2d      v4, v16, v30, #64 - 45
-            xar.2d     v16,  v5, v29, #64 - 36
-            xar.2d      v5,  v3, v27, #64 - 28
-            xar.2d     v27, v18, v27, #64 - 21
-            xar.2d      v3, v17, v31, #64 - 15
-            xar.2d     v30, v11, v30, #64 - 10
-            xar.2d     v31,  v7, v31, #64 -  6
-            xar.2d     v29, v10, v29, #64 -  3
-
-            // Chi and Iota
-            bcax.16b   v20, v26, v22,  v8
-            bcax.16b   v21,  v8, v23, v22
-            bcax.16b   v22, v22, v24, v23
-            bcax.16b   v23, v23, v26, v24
-            bcax.16b   v24, v24,  v8, v26
-
-            ld1r.2d    {{v26}}, [x1], #8
-
-            bcax.16b   v17, v30, v19,  v3
-            bcax.16b   v18,  v3, v15, v19
-            bcax.16b   v19, v19, v16, v15
-            bcax.16b   v15, v15, v30, v16
-            bcax.16b   v16, v16,  v3, v30
-
-            bcax.16b   v10, v25, v12, v31
-            bcax.16b   v11, v31, v13, v12
-            bcax.16b   v12, v12, v14, v13
-            bcax.16b   v13, v13, v25, v14
-            bcax.16b   v14, v14, v31, v25
-
-            bcax.16b    v7, v29,  v9,  v4
-            bcax.16b    v8,  v4,  v5,  v9
-            bcax.16b    v9,  v9,  v6,  v5
-            bcax.16b    v5,  v5, v29,  v6
-            bcax.16b    v6,  v6,  v4, v29
-
-            bcax.16b    v3, v27,  v0, v28
-            bcax.16b    v4, v28,  v1,  v0
-            bcax.16b    v0,  v0,  v2,  v1
-            bcax.16b    v1,  v1, v27,  v2
-            bcax.16b    v2,  v2, v28, v27
-
-            eor.16b v0,v0,v26
-
-            // Rounds loop
-            cbnz    w8, 0b
-
-            // Write state
-            st1.1d	{{ v0- v3}}, [x0], #32
-            st1.1d	{{ v4- v7}}, [x0], #32
-            st1.1d	{{ v8-v11}}, [x0], #32
-            st1.1d	{{v12-v15}}, [x0], #32
-            st1.1d	{{v16-v19}}, [x0], #32
-            st1.1d	{{v20-v23}}, [x0], #32
-            st1.1d	{{v24}},     [x0]
-        ",
-            inout("x0") state.as_mut_ptr() => _,
-            inout("x1") crate::RC[24-round_count..].as_ptr() => _,
-            inout("x8") round_count => _,
-            clobber_abi("C"),
-            options(nostack)
-        );
+    for i in 0..PLEN {
+        state[0][i] = vgetq_lane_u64::<0>(s[i]);
+        state[1][i] = vgetq_lane_u64::<1>(s[i]);
     }
 }
 
+#[target_feature(enable = "sha3")]
+unsafe fn theta(
+    s: &[uint64x2_t; 25],
+) -> (uint64x2_t, uint64x2_t, uint64x2_t, uint64x2_t, uint64x2_t) {
+    let c0 = veor3q_u64(s[0], s[5], veor3q_u64(s[10], s[15], s[20]));
+    let c1 = veor3q_u64(s[1], s[6], veor3q_u64(s[11], s[16], s[21]));
+    let c2 = veor3q_u64(s[2], s[7], veor3q_u64(s[12], s[17], s[22]));
+    let c3 = veor3q_u64(s[3], s[8], veor3q_u64(s[13], s[18], s[23]));
+    let c4 = veor3q_u64(s[4], s[9], veor3q_u64(s[14], s[19], s[24]));
+
+    let d0 = vrax1q_u64(c4, c1);
+    let d1 = vrax1q_u64(c0, c2);
+    let d2 = vrax1q_u64(c1, c3);
+    let d3 = vrax1q_u64(c2, c4);
+    let d4 = vrax1q_u64(c3, c0);
+
+    (d0, d1, d2, d3, d4)
+}
+
+#[target_feature(enable = "sha3")]
+unsafe fn rho_pi(
+    s: &[uint64x2_t; 25],
+    d0: uint64x2_t,
+    d1: uint64x2_t,
+    d2: uint64x2_t,
+    d3: uint64x2_t,
+    d4: uint64x2_t,
+) -> [uint64x2_t; 25] {
+    let v0 = veorq_u64(s[0], d0);
+    let v25 = vxarq_u64::<63>(s[1], d1);
+    let v1 = vxarq_u64::<20>(s[6], d1);
+    let v6 = vxarq_u64::<44>(s[9], d4);
+    let v9 = vxarq_u64::<3>(s[22], d2);
+    let v22 = vxarq_u64::<25>(s[14], d4);
+    let v14 = vxarq_u64::<46>(s[20], d0);
+    let v26 = vxarq_u64::<2>(s[2], d2);
+    let v2 = vxarq_u64::<21>(s[12], d2);
+    let v12 = vxarq_u64::<39>(s[13], d3);
+    let v13 = vxarq_u64::<56>(s[19], d4);
+    let v19 = vxarq_u64::<8>(s[23], d3);
+    let v23 = vxarq_u64::<23>(s[15], d0);
+    let v15 = vxarq_u64::<37>(s[4], d4);
+    let v28 = vxarq_u64::<50>(s[24], d4);
+    let v24 = vxarq_u64::<62>(s[21], d1);
+    let v8 = vxarq_u64::<9>(s[8], d3);
+    let v4 = vxarq_u64::<19>(s[16], d1);
+    let v16 = vxarq_u64::<28>(s[5], d0);
+    let v5 = vxarq_u64::<36>(s[3], d3);
+    let v27 = vxarq_u64::<43>(s[18], d3);
+    let v3 = vxarq_u64::<49>(s[17], d2);
+    let v30 = vxarq_u64::<54>(s[11], d1);
+    let v31 = vxarq_u64::<58>(s[7], d2);
+    let v29 = vxarq_u64::<61>(s[10], d0);
+    [
+        v0, v25, v26, v5, v15, v16, v1, v31, v8, v6, v29, v30, v2, v12, v22, v23, v4, v3, v27, v13,
+        v14, v24, v9, v19, v28,
+    ]
+}
+
+#[target_feature(enable = "sha3")]
+unsafe fn chi_iota(t: &[uint64x2_t; 25], rc: u64) -> [uint64x2_t; 25] {
+    let rc_v = vdupq_n_u64(rc);
+    let v20 = vbcaxq_u64(t[2], t[14], t[8]);
+    let v21 = vbcaxq_u64(t[8], t[15], t[14]);
+    let v22 = vbcaxq_u64(t[14], t[21], t[15]);
+    let v23 = vbcaxq_u64(t[15], t[2], t[21]);
+    let v24 = vbcaxq_u64(t[21], t[8], t[2]);
+    let v17 = vbcaxq_u64(t[11], t[23], t[17]);
+    let v18 = vbcaxq_u64(t[17], t[4], t[23]);
+    let v19 = vbcaxq_u64(t[23], t[5], t[4]);
+    let v15 = vbcaxq_u64(t[4], t[11], t[5]);
+    let v16 = vbcaxq_u64(t[5], t[17], t[11]);
+    let v10 = vbcaxq_u64(t[1], t[13], t[7]);
+    let v11 = vbcaxq_u64(t[7], t[19], t[13]);
+    let v12 = vbcaxq_u64(t[13], t[20], t[19]);
+    let v13 = vbcaxq_u64(t[19], t[1], t[20]);
+    let v14 = vbcaxq_u64(t[20], t[7], t[1]);
+    let v7 = vbcaxq_u64(t[10], t[22], t[16]);
+    let v8 = vbcaxq_u64(t[16], t[3], t[22]);
+    let v9 = vbcaxq_u64(t[22], t[9], t[3]);
+    let v5 = vbcaxq_u64(t[3], t[10], t[9]);
+    let v6 = vbcaxq_u64(t[9], t[16], t[10]);
+    let v3 = vbcaxq_u64(t[18], t[0], t[24]);
+    let v4 = vbcaxq_u64(t[24], t[6], t[0]);
+    let v0 = vbcaxq_u64(t[0], t[12], t[6]);
+    let v1 = vbcaxq_u64(t[6], t[18], t[12]);
+    let v2 = vbcaxq_u64(t[12], t[24], t[18]);
+    let v0_iota = veorq_u64(v0, rc_v);
+    [
+        v0_iota, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18,
+        v19, v20, v21, v22, v23, v24,
+    ]
+}
+
 #[cfg(all(test, target_feature = "sha3"))]
-#[allow(clippy::undocumented_unsafe_blocks)]
 mod tests {
     use super::*;
 
@@ -200,9 +204,9 @@ mod tests {
         ];
 
         let mut state = [0u64; 25];
-        unsafe { p1600_armv8_sha3_asm(&mut state, 24) };
+        unsafe { p1600_armv8_sha3(&mut state, 24) };
         assert_eq!(state, state_first);
-        unsafe { p1600_armv8_sha3_asm(&mut state, 24) };
+        unsafe { p1600_armv8_sha3(&mut state, 24) };
         assert_eq!(state, state_second);
     }
 }

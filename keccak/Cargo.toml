@@ -16,7 +16,7 @@ readme = "README.md"
 edition = "2024"
 rust-version = "1.85"
 
-[target.'cfg(all(target_arch = "aarch64", keccak_backend = "armv8_asm"))'.dependencies]
+[target.'cfg(target_arch = "aarch64")'.dependencies]
 cpufeatures = "0.3"
 
 [lints.rust]
@@ -29,7 +29,7 @@ unused_qualifications = "warn"
 
 [lints.rust.unexpected_cfgs]
 level = "warn"
-check-cfg = ['cfg(keccak_backend, values("armv8_asm", "simd", "soft-compact"))']
+check-cfg = ['cfg(keccak_backend, values("simd", "soft-compact"))']
 
 [lints.clippy]
 borrow_as_ptr = "warn"
