@@ -1,7 +1,7 @@
 //! keccak benchmarks
 
 #![feature(test)]
-#![cfg_attr(feature = "simd", feature(portable_simd))]
+#![cfg_attr(keccak_backend = "simd", feature(portable_simd))]
 
 extern crate keccak;
 extern crate test;
@@ -35,7 +35,7 @@ fn b_p1600_16(b: &mut test::Bencher) {
     b.iter(|| p1600(&mut data, 16));
 }
 
-#[cfg(feature = "simd")]
+#[cfg(keccak_backend = "simd")]
 mod simd {
     use keccak::simd::{f1600x2, f1600x4, f1600x8, u64x2, u64x4, u64x8};
 
