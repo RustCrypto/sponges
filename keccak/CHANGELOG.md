@@ -9,10 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 TODO: fill out rest of changelog
 
+### Changed
+- ARMv8 backend now on-by-default and written using intrinsics ([#112])
+
 ### Fixed
 - Use `doc_cfg` in place of removed `doc_auto_cfg` feature ([#91])
 
 [#91]: https://github.com/RustCrypto/sponges/pull/91
+[#112]: https://github.com/RustCrypto/sponges/pull/112
 
 ## 0.1.6 (2026-02-13)
 ### Fixed

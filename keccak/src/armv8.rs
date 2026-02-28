@@ -1,3 +1,6 @@
+//! ARMv8 intrinsics-based backend.
+
+// TODO(tarcieri): remove when MSRV 1.87
 #![allow(unsafe_op_in_unsafe_fn)]
 
 use crate::{PLEN, RC};
