@@ -48,48 +48,148 @@ use core::{
 #[rustfmt::skip]
 mod unroll;
 
-#[cfg(target_arch = "aarch64")]
-mod armv8;
+// #[cfg(target_arch = "aarch64")]
+// mod armv8;
 
 #[cfg(target_arch = "aarch64")]
 cpufeatures::new!(armv8_sha3_intrinsics, "sha3");
 
-const PLEN: usize = 25;
+mod consts;
 
-const RHO: [u32; 24] = [
-    1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 8, 25, 43, 62, 18, 39, 61, 20, 44,
-];
+use consts::{PI, PLEN, RC, RHO};
 
-const PI: [usize; 24] = [
-    10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12, 2, 20, 14, 22, 9, 6, 1,
-];
+/// A Keccak function which permutates `[u64; PLEN]`.
+pub type KeccakFn = fn(&mut [u64; PLEN]);
 
-const RC: [u64; 24] = [
-    0x0000000000000001,
-    0x0000000000008082,
-    0x800000000000808a,
-    0x8000000080008000,
-    0x000000000000808b,
-    0x0000000080000001,
-    0x8000000080008081,
-    0x8000000000008009,
-    0x000000000000008a,
-    0x0000000000000088,
-    0x0000000080008009,
-    0x000000008000000a,
-    0x000000008000808b,
-    0x800000000000008b,
-    0x8000000000008089,
-    0x8000000000008003,
-    0x8000000000008002,
-    0x8000000000000080,
-    0x000000000000800a,
-    0x800000008000000a,
-    0x8000000080008081,
-    0x8000000000008080,
-    0x0000000080000001,
-    0x8000000080008008,
-];
+/// Struct which handles switching between available backends.
+#[derive(Debug, Copy, Clone)]
+pub struct Backend {
+    #[cfg(target_arch = "aarch64")]
+    armv8_sha3: armv8_sha3_intrinsics::InitToken,
+}
+
+impl Default for Backend {
+    #[inline]
+    fn default() -> Self {
+        Self {
+            #[cfg(target_arch = "aarch64")]
+            armv8_sha3: armv8_sha3_intrinsics::init(),
+        }
+    }
+}
+
+impl Backend {
+    /// Create new Keccak backend.
+    #[inline]
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Execute the provided backend closure with Keccak backend.
+    pub fn with_backend(&self, f: impl BackendClosure) {
+        #[cfg(target_arch = "aarch64")]
+        if self.armv8_sha3.get() {
+            // TODO: impl ARM backend
+            return f.call_once::<SoftBakend>();
+        }
+        f.call_once::<SoftBakend>();
+    }
+
+    /// Execute the closure with `f1600` function.
+    #[inline]
+    pub fn with_f1600(&self, f: impl FnOnce(KeccakFn)) {
+        struct Closure<F: FnOnce(KeccakFn)> {
+            f: F,
+        }
+
+        impl<F: FnOnce(KeccakFn)> BackendClosure for Closure<F> {
+            #[inline(always)]
+            fn call_once<B: ParBackend>(self) {
+                (self.f)(B::get_f1600());
+            }
+        }
+
+        self.with_backend(Closure { f });
+    }
+
+    /// Execute the closure with `p1600` function with the specified number of rounds.
+    ///
+    /// # Panics
+    /// If `ROUNDS` is equal to zero or bigger than 24.
+    pub fn with_p1600<const ROUNDS: usize>(&self, f: impl FnOnce(KeccakFn)) {
+        struct Closure<const ROUNDS: usize, F: FnOnce(KeccakFn)> {
+            f: F,
+        }
+
+        impl<const ROUNDS: usize, F: FnOnce(KeccakFn)> BackendClosure for Closure<ROUNDS, F> {
+            #[inline(always)]
+            fn call_once<B: ParBackend>(self) {
+                (self.f)(B::get_p1600::<ROUNDS>());
+            }
+        }
+
+        self.with_backend(Closure::<ROUNDS, _> { f });
+    }
+}
+
+/// Trait used to define a closure which operates over Keccak backends.
+pub trait BackendClosure {
+    /// Execute closure with the provided backend.
+    fn call_once<B: ParBackend>(self);
+}
+
+/// Trait implemented by a Keccak backend
+pub trait ParBackend {
+    /// Degree of parallelism supported by the backend.
+    const PAR_SIZE: usize;
+
+    /// Get scalar `p1600` function with the specified number of rounds.
+    fn get_p1600<const ROUNDS: usize>() -> KeccakFn;
+
+    /// Apply `p1600` function with the specified number of rounds
+    /// to the parallel state.
+    ///
+    /// # Panics
+    /// - If `state.len()` is not equal to `Self::PAR_SIZE`.
+    /// - If `ROUNDS` is equal to zero or bigger than 24.
+    fn par_p1600<const ROUNDS: usize>(state: &mut [[u64; PLEN]]);
+
+    /// Get scalar `f1600` function.
+    #[inline]
+    #[must_use]
+    fn get_f1600() -> KeccakFn {
+        Self::get_p1600::<{ u64::KECCAK_F_ROUND_COUNT }>()
+    }
+
+    /// Apply `f1600` function to the parallel state.
+    ///
+    /// # Panics
+    /// If `state.len()` is not equal to `Self::PAR_SIZE`.
+    #[inline]
+    fn par_f1600(state: &mut [[u64; PLEN]]) {
+        Self::par_p1600::<{ u64::KECCAK_F_ROUND_COUNT }>(state);
+    }
+}
+
+struct SoftBakend;
+
+impl ParBackend for SoftBakend {
+    const PAR_SIZE: usize = 1;
+
+    #[inline]
+    fn get_p1600<const ROUNDS: usize>() -> KeccakFn {
+        |s| p1600(s, ROUNDS)
+    }
+
+    #[inline]
+    fn par_p1600<const ROUNDS: usize>(state: &mut [[u64; PLEN]]) {
+        let [state] = state else {
+            panic!("length of `state` is not equal to 1");
+        };
+        p1600(state, ROUNDS);
+    }
+}
 
 /// Keccak is a permutation over an array of lanes which comprise the sponge
 /// construction.
@@ -163,99 +263,6 @@ impl_keccak!(p200, f200, u8);
 impl_keccak!(p400, f400, u16);
 impl_keccak!(p800, f800, u32);
 impl_keccak!(p1600, f1600, u64);
-
-/// Keccak permutation with `b=1600` state (i.e. for Keccak-p1600/Keccak-f1600) with optional CPU
-/// feature detection support.
-#[derive(Clone, Debug)]
-pub struct KeccakP1600 {
-    state: [u64; PLEN],
-    #[cfg(target_arch = "aarch64")]
-    has_intrinsics: armv8_sha3_intrinsics::InitToken,
-}
-
-impl KeccakP1600 {
-    /// Create a new 1600-bit Keccak state from the given input array.
-    #[inline]
-    #[must_use]
-    pub fn new(state: [u64; PLEN]) -> Self {
-        Self {
-            state,
-            #[cfg(target_arch = "aarch64")]
-            has_intrinsics: armv8_sha3_intrinsics::init(),
-        }
-    }
-
-    /// `Keccak-p[1600, rc]` permutation.
-    pub fn p1600(&mut self, round_count: usize) {
-        #[cfg(target_arch = "aarch64")]
-        if self.has_intrinsics.get() {
-            // SAFETY: we just performed runtime CPU feature detection above
-            unsafe { armv8::p1600_armv8_sha3(&mut self.state, round_count) }
-            return;
-        }
-
-        p1600(&mut self.state, round_count);
-    }
-
-    /// `Keccak-f[1600]` permutation.
-    pub fn f1600(&mut self) {
-        #[cfg(target_arch = "aarch64")]
-        if self.has_intrinsics.get() {
-            // SAFETY: we just performed runtime CPU feature detection above
-            unsafe { armv8::p1600_armv8_sha3(&mut self.state, u64::KECCAK_F_ROUND_COUNT) }
-            return;
-        }
-
-        f1600(&mut self.state);
-    }
-
-    /// Extract the state array.
-    #[must_use]
-    pub fn into_inner(self) -> [u64; PLEN] {
-        self.state
-    }
-}
-
-impl AsRef<[u64; PLEN]> for KeccakP1600 {
-    #[inline]
-    fn as_ref(&self) -> &[u64; PLEN] {
-        &self.state
-    }
-}
-
-impl AsMut<[u64; PLEN]> for KeccakP1600 {
-    #[inline]
-    fn as_mut(&mut self) -> &mut [u64; PLEN] {
-        &mut self.state
-    }
-}
-
-impl Default for KeccakP1600 {
-    fn default() -> Self {
-        Self::new(Default::default())
-    }
-}
-
-impl From<[u64; PLEN]> for KeccakP1600 {
-    #[inline]
-    fn from(state: [u64; PLEN]) -> Self {
-        Self::new(state)
-    }
-}
-
-impl From<&[u64; PLEN]> for KeccakP1600 {
-    #[inline]
-    fn from(state: &[u64; PLEN]) -> Self {
-        Self::new(*state)
-    }
-}
-
-impl From<KeccakP1600> for [u64; PLEN] {
-    #[inline]
-    fn from(keccak: KeccakP1600) -> Self {
-        keccak.into_inner()
-    }
-}
 
 #[cfg(keccak_backend = "simd")]
 /// SIMD implementations for Keccak-f1600 sponge function
@@ -351,7 +358,7 @@ pub fn keccak_p<L: LaneSize>(state: &mut [L; PLEN], round_count: usize) {
 
 #[cfg(test)]
 mod tests {
-    use crate::{KeccakP1600, LaneSize, PLEN, keccak_p};
+    use crate::{Backend, LaneSize, PLEN, keccak_p};
 
     fn keccak_f<L: LaneSize>(state_first: [L; PLEN], state_second: [L; PLEN]) {
         let mut state = [L::default(); PLEN];
@@ -478,9 +485,17 @@ mod tests {
 
         keccak_f::<u64>(state_first, state_second);
 
-        let mut keccak = KeccakP1600::new(state_first);
-        keccak.f1600();
-        assert_eq!(keccak.into_inner(), state_second);
+        Backend::new().with_f1600(|f1600| {
+            let mut buf = state_first;
+            f1600(&mut buf);
+            assert_eq!(buf, state_second);
+        });
+
+        Backend::new().with_p1600::<24>(|p1600_24| {
+            let mut buf = state_first;
+            p1600_24(&mut buf);
+            assert_eq!(buf, state_second);
+        });
     }
 
     #[cfg(keccak_backend = "simd")]
