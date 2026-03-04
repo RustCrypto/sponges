@@ -42,14 +42,18 @@ impl super::Backend for Backend {
     #[cfg(feature = "parallel")]
     #[inline]
     fn get_par_p1600<const ROUNDS: usize>() -> ParFn1600<Self> {
-        fn transpose<const N: usize, const M: usize>(arr: &[[u64; N]; M]) -> [[u64; M]; N] {
-            array::from_fn(|i| array::from_fn(|j| arr[j][i]))
-        }
-
         |Array(state)| {
-            let mut simd_state = transpose(state).map(u64xN::from_array);
+            let mut simd_state = array::from_fn(|i| {
+                let t = array::from_fn(|j| state[j][i]);
+                u64xN::from_array(t)
+            });
             keccak_p::<_, ROUNDS>(&mut simd_state);
-            *state = transpose(&simd_state.map(u64xN::to_array));
+            for i in 0..simd_state.len() {
+                let s = simd_state[i].to_array();
+                for j in 0..s.len() {
+                    state[j][i] = s[j];
+                }
+            }
         }
     }
 }
