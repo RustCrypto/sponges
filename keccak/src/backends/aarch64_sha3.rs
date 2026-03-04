@@ -3,8 +3,35 @@
 // TODO(tarcieri): remove when MSRV 1.87
 #![allow(unsafe_op_in_unsafe_fn)]
 
-use crate::{PLEN, RC};
+use crate::consts::{PLEN, RC};
+use crate::types::Fn1600;
+#[cfg(feature = "parallel")]
+use crate::types::ParFn1600;
+
 use core::{arch::aarch64::*, array};
+#[cfg(feature = "parallel")]
+use hybrid_array::{Array, typenum::U2};
+
+/// AArch64 backend implemented using the SHA3 extension.
+pub(crate) struct Backend;
+
+impl super::Backend for Backend {
+    #[cfg(feature = "parallel")]
+    type ParSize1600 = U2;
+
+    #[inline]
+    fn get_p1600<const ROUNDS: usize>() -> Fn1600 {
+        // SAFETY: the backend is used only after required target feature checks
+        |state| unsafe { p1600_armv8_sha3(state, ROUNDS) }
+    }
+
+    #[cfg(feature = "parallel")]
+    #[inline]
+    fn get_par_p1600<const ROUNDS: usize>() -> ParFn1600<Self> {
+        // SAFETY: the backend is used only after required target feature checks
+        |Array(state)| unsafe { p1600_armv8_sha3_times2(state, ROUNDS) }
+    }
+}
 
 /// Keccak-p1600 on ARMv8.4-A with `FEAT_SHA3`.
 ///
@@ -12,7 +39,7 @@ use core::{arch::aarch64::*, array};
 /// Adapted from the Keccak-f1600 implementation in the XKCP/K12.
 /// see <https://github.com/XKCP/K12/blob/df6a21e6d1f34c1aa36e8d702540899c97dba5a0/lib/ARMv8Asha3/KeccakP-1600-ARMv8Asha3.S#L69>
 #[target_feature(enable = "sha3")]
-pub unsafe fn p1600_armv8_sha3(state: &mut [u64; PLEN], round_count: usize) {
+unsafe fn p1600_armv8_sha3(state: &mut [u64; PLEN], round_count: usize) {
     let mut s = [*state, Default::default()];
     // SAFETY: both functions have the same safety invariants, namely they require the `sha3`
     // target feature is available, and the caller is responsible for ensuring support
@@ -27,11 +54,10 @@ pub unsafe fn p1600_armv8_sha3(state: &mut [u64; PLEN], round_count: usize) {
 ///
 /// <https://github.com/XKCP/K12/blob/df6a21e/lib/ARMv8Asha3/KeccakP-1600-ARMv8Asha3.S#L69>
 #[target_feature(enable = "sha3")]
-pub unsafe fn p1600_armv8_sha3_times2(state: &mut [[u64; PLEN]; 2], round_count: usize) {
+unsafe fn p1600_armv8_sha3_times2(state: &mut [[u64; PLEN]; 2], round_count: usize) {
     assert!(
-        matches!(round_count, 1..=24),
-        "invalid round count (must be 1-24): {}",
-        round_count
+        round_count <= 24,
+        "invalid round count greater than 24: {round_count}",
     );
 
     let mut s: [uint64x2_t; PLEN] =
@@ -141,75 +167,4 @@ unsafe fn chi_iota(t: &[uint64x2_t; 25], rc: u64) -> [uint64x2_t; 25] {
         v0_iota, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18,
         v19, v20, v21, v22, v23, v24,
     ]
-}
-
-#[cfg(all(test, target_feature = "sha3"))]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_keccak_f1600() {
-        // Test vectors are copied from XKCP (eXtended Keccak Code Package)
-        // https://github.com/XKCP/XKCP/blob/master/tests/TestVectors/KeccakF-1600-IntermediateValues.txt
-        let state_first = [
-            0xF1258F7940E1DDE7,
-            0x84D5CCF933C0478A,
-            0xD598261EA65AA9EE,
-            0xBD1547306F80494D,
-            0x8B284E056253D057,
-            0xFF97A42D7F8E6FD4,
-            0x90FEE5A0A44647C4,
-            0x8C5BDA0CD6192E76,
-            0xAD30A6F71B19059C,
-            0x30935AB7D08FFC64,
-            0xEB5AA93F2317D635,
-            0xA9A6E6260D712103,
-            0x81A57C16DBCF555F,
-            0x43B831CD0347C826,
-            0x01F22F1A11A5569F,
-            0x05E5635A21D9AE61,
-            0x64BEFEF28CC970F2,
-            0x613670957BC46611,
-            0xB87C5A554FD00ECB,
-            0x8C3EE88A1CCF32C8,
-            0x940C7922AE3A2614,
-            0x1841F924A2C509E4,
-            0x16F53526E70465C2,
-            0x75F644E97F30A13B,
-            0xEAF1FF7B5CECA249,
-        ];
-        let state_second = [
-            0x2D5C954DF96ECB3C,
-            0x6A332CD07057B56D,
-            0x093D8D1270D76B6C,
-            0x8A20D9B25569D094,
-            0x4F9C4F99E5E7F156,
-            0xF957B9A2DA65FB38,
-            0x85773DAE1275AF0D,
-            0xFAF4F247C3D810F7,
-            0x1F1B9EE6F79A8759,
-            0xE4FECC0FEE98B425,
-            0x68CE61B6B9CE68A1,
-            0xDEEA66C4BA8F974F,
-            0x33C43D836EAFB1F5,
-            0xE00654042719DBD9,
-            0x7CF8A9F009831265,
-            0xFD5449A6BF174743,
-            0x97DDAD33D8994B40,
-            0x48EAD5FC5D0BE774,
-            0xE3B8C8EE55B7B03C,
-            0x91A0226E649E42E9,
-            0x900E3129E7BADD7B,
-            0x202A9EC5FAA3CCE8,
-            0x5B3402464E1C3DB6,
-            0x609F4E62A44C1059,
-            0x20D06CD26A8FBF5C,
-        ];
-
-        let mut state = [0u64; 25];
-        unsafe { p1600_armv8_sha3(&mut state, 24) };
-        assert_eq!(state, state_first);
-        unsafe { p1600_armv8_sha3(&mut state, 24) };
-        assert_eq!(state, state_second);
-    }
 }

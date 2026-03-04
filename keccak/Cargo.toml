@@ -16,8 +16,15 @@ readme = "README.md"
 edition = "2024"
 rust-version = "1.85"
 
+[dependencies]
+cfg-if = "1"
+hybrid-array = { version = "0.4", optional = true }
+
 [target.'cfg(target_arch = "aarch64")'.dependencies]
 cpufeatures = "0.3"
+
+[features]
+parallel = ["dep:hybrid-array"]
 
 [lints.rust]
 missing_debug_implementations = "warn"
@@ -29,7 +36,10 @@ unused_qualifications = "warn"
 
 [lints.rust.unexpected_cfgs]
 level = "warn"
-check-cfg = ['cfg(keccak_backend, values("simd", "soft-compact"))']
+check-cfg = [
+    'cfg(keccak_soft_compact)',
+    'cfg(keccak_backend, values("aarch64_sha3", "simd128", "simd256", "simd512", "soft"))',
+]
 
 [lints.clippy]
 borrow_as_ptr = "warn"

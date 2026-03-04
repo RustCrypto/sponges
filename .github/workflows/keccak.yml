@@ -42,8 +42,9 @@ jobs:
           toolchain: ${{ matrix.rust }}
           targets: ${{ matrix.target }}
       - run: cargo build --target ${{ matrix.target }}
+      - run: cargo build --target ${{ matrix.target }} --features parallel
       - env:
-          RUSTFLAGS: '-Dwarnings --cfg keccak_backend="soft-compact"'
+          RUSTFLAGS: '-Dwarnings --cfg keccak_backend="soft"'
         run: cargo build --target ${{ matrix.target }}
 
   minimal-versions:
@@ -80,25 +81,36 @@ jobs:
           targets: ${{ matrix.target }}
       - run: cargo check --target ${{ matrix.target }}
       - run: cargo test --target ${{ matrix.target }}
-      - run: cargo test --release --target ${{ matrix.target }}
+      - run: cargo test --target ${{ matrix.target }} --features parallel
+      - run: cargo test --release --target ${{ matrix.target }} --features parallel
       - env:
-          RUSTFLAGS: '-Dwarnings --cfg keccak_backend="armv8_asm"'
+          RUSTFLAGS: '-Dwarnings --cfg keccak_soft_compact'
         run: cargo test --release --target ${{ matrix.target }}
       - env:
-          RUSTFLAGS: '-Dwarnings --cfg keccak_backend="soft-compact"'
+          RUSTFLAGS: '-Dwarnings --cfg keccak_backend="soft"'
+        run: cargo test --release --target ${{ matrix.target }}
+      - if: contains(matrix.target, 'aarch64')
+        env:
+          RUSTFLAGS: '-Dwarnings --cfg keccak_backend="aarch64_sha3"'
         run: cargo test --release --target ${{ matrix.target }}
 
   test-simd:
     runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: '-Dwarnings --cfg keccak_backend="simd"'
     steps:
       - uses: actions/checkout@v4
       - uses: RustCrypto/actions/cargo-cache@master
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: nightly
-      - run: cargo test
+      - env:
+          RUSTFLAGS: '-Dwarnings --cfg keccak_backend="simd128"'
+        run: cargo test --features parallel
+      - env:
+          RUSTFLAGS: '-Dwarnings --cfg keccak_backend="simd256"'
+        run: cargo test --features parallel
+      - env:
+          RUSTFLAGS: '-Dwarnings --cfg keccak_backend="simd512"'
+        run: cargo test --features parallel
 
   test-miri:
     runs-on: ubuntu-latest
@@ -117,15 +129,22 @@ jobs:
           components: miri
       - run: cargo miri setup
       - run: cargo miri test --target ${{ matrix.target }}
+      - run: cargo miri test --target ${{ matrix.target }} --features parallel
       - env:
-          RUSTFLAGS: '-Dwarnings --cfg keccak_backend="armv8_asm"'
-        run: cargo miri test --release --target ${{ matrix.target }}
+          RUSTFLAGS: '-Dwarnings --cfg keccak_soft_compact'
+        run: cargo miri test --release --target ${{ matrix.target }} --features parallel
       - env:
-          RUSTFLAGS: '-Dwarnings --cfg keccak_backend="simd"'
-        run: cargo miri test --release --target ${{ matrix.target }}
+          RUSTFLAGS: '-Dwarnings --cfg keccak_backend="simd128"'
+        run: cargo miri test --release --target ${{ matrix.target }} --features parallel
       - env:
-          RUSTFLAGS: '-Dwarnings --cfg keccak_backend="soft-compact"'
-        run: cargo miri test --release --target ${{ matrix.target }}
+          RUSTFLAGS: '-Dwarnings --cfg keccak_backend="simd256"'
+        run: cargo miri test --release --target ${{ matrix.target }} --features parallel
+      - env:
+          RUSTFLAGS: '-Dwarnings --cfg keccak_backend="simd512"'
+        run: cargo miri test --release --target ${{ matrix.target }} --features parallel
+      - env:
+          RUSTFLAGS: '-Dwarnings --cfg keccak_backend="soft"'
+        run: cargo miri test --release --target ${{ matrix.target }} --features parallel
 
   aarch64-sha3:
     needs: set-msrv
@@ -154,8 +173,8 @@ jobs:
           mv /tmp/cross ~/.cargo/bin
         shell: bash
       - env:
-          RUSTFLAGS: '-C target-feature=+sha3 --cfg keccak_backend="armv8_asm"'
+          RUSTFLAGS: '-C target-feature=+sha3 --cfg keccak_backend="aarch64_sha3"'
         run: |
           cd keccak
           # Cross doesn't enable `sha3` by default, but QEMU supports it.
-          cross test --target aarch64-unknown-linux-gnu --no-default-features
+          cross test --target aarch64-unknown-linux-gnu --features parallel
