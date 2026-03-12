@@ -33,7 +33,7 @@ unused_qualifications = "warn"
 [lints.rust.unexpected_cfgs]
 level = "warn"
 check-cfg = [
-    'cfg(keccak_soft_compact)',
+    'cfg(keccak_backend_soft, values("compact"))',
     'cfg(keccak_backend, values("aarch64_sha3", "simd128", "simd256", "simd512", "soft"))',
 ]
 
