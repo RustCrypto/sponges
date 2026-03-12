@@ -1,20 +1,16 @@
 [package]
 name = "keccak"
-version = "0.2.0-rc.2"
-description = """
-Pure Rust implementation of the Keccak sponge function including the keccak-f
-and keccak-p variants
-"""
+version = "0.2.0"
 authors = ["RustCrypto Developers"]
-license = "Apache-2.0 OR MIT"
-documentation = "https://docs.rs/keccak"
-homepage = "https://github.com/RustCrypto/sponges/tree/master/keccak"
-repository = "https://github.com/RustCrypto/sponges"
-keywords = ["crypto", "sponge", "keccak", "keccak-f", "keccak-p"]
-categories = ["cryptography", "no-std"]
-readme = "README.md"
 edition = "2024"
 rust-version = "1.85"
+documentation = "https://docs.rs/keccak"
+readme = "README.md"
+repository = "https://github.com/RustCrypto/sponges"
+license = "Apache-2.0 OR MIT"
+keywords = ["crypto", "sponge", "keccak", "keccak-f", "keccak-p"]
+categories = ["cryptography", "no-std"]
+description = "Pure Rust implementation of the Keccak sponge functions"
 
 [dependencies]
 cfg-if = "1"
