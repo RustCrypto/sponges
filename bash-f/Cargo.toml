@@ -1,17 +1,16 @@
 [package]
 name = "bash-f"
 version = "0.1.0"
-description = "Pure Rust implementation of the bash-f sponge function defined in STB 34.101.77-2020"
-license = "Apache-2.0 OR MIT"
 authors = ["RustCrypto Developers"]
-documentation = "https://docs.rs/bash"
-homepage = "https://github.com/RustCrypto/sponges/tree/master/bash"
-repository = "https://github.com/RustCrypto/sponges"
-keywords = ["bash", "sponge", "belt", "permutation"]
-categories = ["cryptography", "no-std"]
-readme = "README.md"
 edition = "2024"
 rust-version = "1.85"
+documentation = "https://docs.rs/bash"
+readme = "README.md"
+repository = "https://github.com/RustCrypto/sponges"
+license = "Apache-2.0 OR MIT"
+keywords = ["bash", "sponge", "belt", "permutation"]
+categories = ["cryptography", "no-std"]
+description = "Pure Rust implementation of the bash-f sponge function defined in STB 34.101.77-2020"
 
 [lints]
 workspace = true
