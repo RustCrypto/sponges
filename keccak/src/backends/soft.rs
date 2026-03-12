@@ -52,7 +52,7 @@ impl_lanesize!(u64, F1600_ROUNDS);
 #[rustfmt::skip]
 macro_rules! unroll5 {
     ($var: ident, $body: block) => {
-        #[cfg(not(keccak_soft_compact))]
+        #[cfg(not(keccak_backend_soft = "compact"))]
         {
             { const $var: usize = 0; $body; }
             { const $var: usize = 1; $body; }
@@ -60,7 +60,7 @@ macro_rules! unroll5 {
             { const $var: usize = 3; $body; }
             { const $var: usize = 4; $body; }
         }
-        #[cfg(keccak_soft_compact)]
+        #[cfg(keccak_backend_soft = "compact")]
         {
             for $var in 0..5 $body
         }
@@ -70,7 +70,7 @@ macro_rules! unroll5 {
 #[rustfmt::skip]
 macro_rules! unroll24 {
     ($var: ident, $body: block) => {
-        #[cfg(not(keccak_soft_compact))]
+        #[cfg(not(keccak_backend_soft = "compact"))]
         {
             { const $var: usize = 0; $body; }
             { const $var: usize = 1; $body; }
@@ -97,7 +97,7 @@ macro_rules! unroll24 {
             { const $var: usize = 22; $body; }
             { const $var: usize = 23; $body; }
         }
-        #[cfg(keccak_soft_compact)]
+        #[cfg(keccak_backend_soft = "compact")]
         {
             for $var in 0..24 $body
         }
