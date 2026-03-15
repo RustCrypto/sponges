@@ -16,7 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Edition changed to 2024 and MSRV bumped to 1.85 ([#89])
 - Bump `cpufeatures` dependency to v0.3 ([#99])
-- Converted ARMv8 ASM into intrinsics ([#112])
+- AArch64 ASM backend is re-implemented using intrinsics (note that it's still
+  enabled by default on AArch64 targets behind target feature auto-detection) ([#112])
 
 ### Removed
 - `asm`, `simd`, and `no_unroll` crate features in favor of `keccak_backend`
