@@ -54,12 +54,14 @@ keccak::Keccak::new().with_f1600(|f1600| {
 You can modify crate using the following configuration flags:
 
 - `keccak_backend`: select the specified backend. Supported values:
-  `aarch64_sha3`, `simd128`, `simd256`, `simd512`, `soft`.
-- `keccak_soft_compact`: do not unroll loops in the software backend.
-  Reduces performance, but results in a more compact binary code.
+    - `aarch64_sha3`: AArch64-specific backend based on the `sha3` extension.
+    - `simd128/256/512`: backend based on the portable SIMD API. Requires Nightly compiler.
+    - `soft`: portable software backend.
+- `keccak_backend_soft="compact"`: control software backend implementation. Supported values:
+    - `compact`: do not unroll loops. Reduces performance, but results in a more compact binary code.
 
 The flags can be enabled using `RUSTFLAGS` environment variable
-(e.g. `RUSTFLAGS="--cfg aes_compact"`) or by modifying `.cargo/config`.
+(e.g. `RUSTFLAGS='--cfg keccak_backend="soft"'`) or by modifying `.cargo/config.toml`.
 
 ## License
 
