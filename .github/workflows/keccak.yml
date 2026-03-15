@@ -84,7 +84,7 @@ jobs:
       - run: cargo test --target ${{ matrix.target }} --features parallel
       - run: cargo test --release --target ${{ matrix.target }} --features parallel
       - env:
-          RUSTFLAGS: '-Dwarnings --cfg keccak_soft_compact'
+          RUSTFLAGS: '-Dwarnings --cfg keccak_backend_soft="compact"'
         run: cargo test --release --target ${{ matrix.target }}
       - env:
           RUSTFLAGS: '-Dwarnings --cfg keccak_backend="soft"'
@@ -131,7 +131,7 @@ jobs:
       - run: cargo miri test --target ${{ matrix.target }}
       - run: cargo miri test --target ${{ matrix.target }} --features parallel
       - env:
-          RUSTFLAGS: '-Dwarnings --cfg keccak_soft_compact'
+          RUSTFLAGS: '-Dwarnings --cfg keccak_backend_soft="compact"'
         run: cargo miri test --release --target ${{ matrix.target }} --features parallel
       - env:
           RUSTFLAGS: '-Dwarnings --cfg keccak_backend="simd128"'
