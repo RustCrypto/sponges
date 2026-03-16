@@ -5,18 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.2.0 (UNRELEASED)
+## 0.2.0 (2026-03-16)
 
-TODO: fill out rest of changelog
+### Added
+- `keccak_backend` configuration parameter with `aarch64_sha3`, `simd128`,
+  `simd256`, `simd512`, and `soft` values ([#105], [#106], [#113])
+- `Keccak` struct with a closure-based API for a more efficient access to
+  supported backends ([#113])
 
 ### Changed
-- ARMv8 backend now on-by-default and written using intrinsics ([#112])
+- Edition changed to 2024 and MSRV bumped to 1.85 ([#89])
+- Bump `cpufeatures` dependency to v0.3 ([#99])
+- AArch64 ASM backend is re-implemented using intrinsics (note that it's still
+  enabled by default on AArch64 targets behind target feature auto-detection) ([#112])
+
+### Removed
+- `asm`, `simd`, and `no_unroll` crate features in favor of `keccak_backend`
+  and `keccak_backend_soft` configuration parameters ([#105], [#106], [#113])
+- `f1600` and `p1600` functions in favor of the `Keccak` struct ([#113])
 
 ### Fixed
 - Use `doc_cfg` in place of removed `doc_auto_cfg` feature ([#91])
 
+[#89]: https://github.com/RustCrypto/sponges/pull/89
 [#91]: https://github.com/RustCrypto/sponges/pull/91
+[#99]: https://github.com/RustCrypto/sponges/pull/99
+[#105]: https://github.com/RustCrypto/sponges/pull/105
+[#106]: https://github.com/RustCrypto/sponges/pull/106
 [#112]: https://github.com/RustCrypto/sponges/pull/112
+[#113]: https://github.com/RustCrypto/sponges/pull/113
 
 ## 0.1.6 (2026-02-13)
 ### Fixed
