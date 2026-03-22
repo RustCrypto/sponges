@@ -20,9 +20,6 @@ rand = { version = "0.8", default-features = false, features = [
     "getrandom",
 ] }
 
-[features]
-no_unroll = ["ascon/no_unroll"]
-
 [[bench]]
 name = "ascon"
 path = "src/ascon.rs"
