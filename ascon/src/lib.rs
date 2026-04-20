@@ -21,11 +21,11 @@ pub type State = [u64; 5];
 
 /// Ascon's round function
 #[inline(always)]
-const fn round(x: [u64; 5], c: u64) -> [u64; 5] {
-    let (mut x0, mut x1, mut x3, mut x4) = (x[0], x[1], x[3], x[4]);
+const fn round(state: &mut State, c: u64) {
+    let [mut x0, mut x1, mut x2, mut x3, mut x4] = *state;
 
-    // Addition of Constants
-    let mut x2 = x[2] ^ c;
+    // Addition of round constant
+    x2 ^= c;
 
     // Substitution Layer.
     // BGC Optimized Implementations from:
@@ -49,13 +49,13 @@ const fn round(x: [u64; 5], c: u64) -> [u64; 5] {
     x4 = t0 ^ t12;
 
     // Linear Diffusion Layer
-    [
+    *state = [
         x0 ^ x0.rotate_right(19) ^ x0.rotate_right(28),
         x1 ^ x1.rotate_right(61) ^ x1.rotate_right(39),
         x2 ^ x2.rotate_right(1) ^ x2.rotate_right(6),
         x3 ^ x3.rotate_right(10) ^ x3.rotate_right(17),
         x4 ^ x4.rotate_right(7) ^ x4.rotate_right(41),
-    ]
+    ];
 }
 
 /// Apply Ascon permutation with the given number of rounds.
@@ -63,7 +63,6 @@ const fn round(x: [u64; 5], c: u64) -> [u64; 5] {
 /// Results in a compilation error if `ROUNDS` is greater than 12.
 pub const fn permute<const ROUNDS: usize>(state: &mut State) {
     const { assert!(ROUNDS <= MAX_ROUNDS) };
-    let mut x = *state;
 
     #[cfg(not(ascon_backend = "soft-compact"))]
     {
@@ -71,35 +70,33 @@ pub const fn permute<const ROUNDS: usize>(state: &mut State) {
             ($state:ident, $round:literal, $rounds:expr) => {
                 if $round >= MAX_ROUNDS - $rounds {
                     let rc = round_constant($round);
-                    $state = round($state, rc);
+                    round($state, rc);
                 }
             };
         }
 
-        unroll_round!(x, 0, ROUNDS);
-        unroll_round!(x, 1, ROUNDS);
-        unroll_round!(x, 2, ROUNDS);
-        unroll_round!(x, 3, ROUNDS);
-        unroll_round!(x, 4, ROUNDS);
-        unroll_round!(x, 5, ROUNDS);
-        unroll_round!(x, 6, ROUNDS);
-        unroll_round!(x, 7, ROUNDS);
-        unroll_round!(x, 8, ROUNDS);
-        unroll_round!(x, 9, ROUNDS);
-        unroll_round!(x, 10, ROUNDS);
-        unroll_round!(x, 11, ROUNDS);
+        unroll_round!(state, 0, ROUNDS);
+        unroll_round!(state, 1, ROUNDS);
+        unroll_round!(state, 2, ROUNDS);
+        unroll_round!(state, 3, ROUNDS);
+        unroll_round!(state, 4, ROUNDS);
+        unroll_round!(state, 5, ROUNDS);
+        unroll_round!(state, 6, ROUNDS);
+        unroll_round!(state, 7, ROUNDS);
+        unroll_round!(state, 8, ROUNDS);
+        unroll_round!(state, 9, ROUNDS);
+        unroll_round!(state, 10, ROUNDS);
+        unroll_round!(state, 11, ROUNDS);
     }
 
     #[cfg(ascon_backend = "soft-compact")]
     {
         let mut i = MAX_ROUNDS - ROUNDS;
         while i < MAX_ROUNDS {
-            x = round(x, round_constant(i as u64));
+            round(state, round_constant(i as u64));
             i += 1;
         }
     }
-
-    *state = x;
 }
 
 /// Apply Ascon permutation with 12 rounds.
