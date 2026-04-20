@@ -61,6 +61,7 @@ const fn round(state: &mut State, c: u64) {
 /// Apply Ascon permutation with the given number of rounds.
 ///
 /// Results in a compilation error if `ROUNDS` is greater than 12.
+#[inline]
 pub const fn permute<const ROUNDS: usize>(state: &mut State) {
     const { assert!(ROUNDS <= MAX_ROUNDS) };
 
@@ -100,16 +101,19 @@ pub const fn permute<const ROUNDS: usize>(state: &mut State) {
 }
 
 /// Apply Ascon permutation with 12 rounds.
+#[inline]
 pub const fn permute12(state: &mut State) {
     permute::<12>(state);
 }
 
 /// Apply Ascon permutation with 8 rounds.
+#[inline]
 pub const fn permute8(state: &mut State) {
     permute::<8>(state);
 }
 
 /// Apply Ascon permutation with 6 rounds.
+#[inline]
 pub const fn permute6(state: &mut State) {
     permute::<6>(state);
 }
