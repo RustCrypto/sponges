@@ -113,8 +113,3 @@ pub const fn permute8(state: &mut State) {
 pub const fn permute6(state: &mut State) {
     permute::<6>(state);
 }
-
-/// Apply Ascon permutation with 1 round.
-pub const fn permute1(state: &mut State) {
-    permute::<1>(state);
-}

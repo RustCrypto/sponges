@@ -11,7 +11,7 @@ fn criterion_bench_permutation(c: &mut Criterion) {
 
     let mut c = c.benchmark_group("Permutation");
 
-    c.bench_function("1 round", |b| b.iter(|| ascon::permute1(&mut state)));
+    c.bench_function("1 round", |b| b.iter(|| ascon::permute::<1>(&mut state)));
     c.bench_function("6 rounds", |b| b.iter(|| ascon::permute6(&mut state)));
     c.bench_function("8 rounds", |b| b.iter(|| ascon::permute8(&mut state)));
     c.bench_function("12 rounds", |b| b.iter(|| ascon::permute12(&mut state)));
