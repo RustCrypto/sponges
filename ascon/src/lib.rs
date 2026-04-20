@@ -34,32 +34,39 @@ pub struct State {
 
 /// Ascon's round function
 const fn round(x: [u64; 5], c: u64) -> [u64; 5] {
-    // S-box layer
-    let x0 = x[0] ^ x[4];
-    let x2 = x[2] ^ x[1] ^ c; // with round constant
-    let x4 = x[4] ^ x[3];
+    let (mut x0, mut x1, mut x3, mut x4) = (x[0], x[1], x[3], x[4]);
 
-    let tx0 = x0 ^ (!x[1] & x2);
-    let tx1 = x[1] ^ (!x2 & x[3]);
-    let tx2 = x2 ^ (!x[3] & x4);
-    let tx3 = x[3] ^ (!x4 & x0);
-    let tx4 = x4 ^ (!x0 & x[1]);
-    let tx1 = tx1 ^ tx0;
-    let tx3 = tx3 ^ tx2;
-    let tx0 = tx0 ^ tx4;
+    // Addition of Constants
+    let mut x2 = x[2] ^ c;
 
-    // linear layer
-    let x0 = tx0 ^ tx0.rotate_right(9);
-    let x1 = tx1 ^ tx1.rotate_right(22);
-    let x2 = tx2 ^ tx2.rotate_right(5);
-    let x3 = tx3 ^ tx3.rotate_right(7);
-    let x4 = tx4 ^ tx4.rotate_right(34);
+    // Substitution Layer.
+    // BGC Optimized Implementations from:
+    // Optimizing S-box Implementations Using SAT Solvers: Revisited
+    // https://eprint.iacr.org/2023/1721.pdf
+    let t0 = x0 ^ x4;
+    let t1 = !x4;
+    let t2 = t1 | x3;
+    let t3 = x1 ^ x2;
+    let t4 = x3 ^ x2;
+    let t5 = x3 ^ x4;
+    let t6 = t0 | x1;
+    let t7 = x0 | t5;
+    let t8 = t4 | t3;
+    x1 = t0 ^ t8;
+    x3 = t3 ^ t7;
+    let t11 = x2 & t3;
+    let t12 = t6 ^ t5;
+    x2 = t3 ^ t2;
+    x0 = t12 ^ t11;
+    x4 = t0 ^ t12;
+
+    // Linear Diffusion Layer
     [
-        tx0 ^ x0.rotate_right(19),
-        tx1 ^ x1.rotate_right(39),
-        !(tx2 ^ x2.rotate_right(1)),
-        tx3 ^ x3.rotate_right(10),
-        tx4 ^ x4.rotate_right(7),
+        x0 ^ x0.rotate_right(19) ^ x0.rotate_right(28),
+        x1 ^ x1.rotate_right(61) ^ x1.rotate_right(39),
+        x2 ^ x2.rotate_right(1) ^ x2.rotate_right(6),
+        x3 ^ x3.rotate_right(10) ^ x3.rotate_right(17),
+        x4 ^ x4.rotate_right(7) ^ x4.rotate_right(41),
     ]
 }
 
