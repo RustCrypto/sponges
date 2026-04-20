@@ -7,25 +7,11 @@
 ![Rust Version][rustc-image]
 [![Project Chat][chat-image]][chat-link]
 
-Pure Rust implementation of the permutation of [Ascon], a family of
-authenticated encryption and hashing algorithms designed to be lightweight and
-easy to implement.
+Pure Rust implementation of the [Ascon] permutation, winner of the
+[NIST Lightweight Cryptography] competition.
 
-[Documentation][docs-link]
-
-## About
-
-Ascon is a family of lightweight algorithms built on a core permutation
-algorithm. These algorithms include:
-
-- [x] [`ascon-aead128`]: Authenticated Encryption with Associated Data
-- [x] [`ascon-hash256`]: Hash functions and extendible-output functions (XOF)
-- [ ] Pseudo-random functions (PRF) and message authentication codes (MAC)
-
-Ascon has been selected as [new standard for lightweight cryptography] in the
-[NIST Lightweight Cryptography] competition, and has also been selected as the
-primary choice for lightweight authenticated encryption in the final
-portfolio of the [CAESAR competition].
+This is a low-level crate used for implementation of higher-level agorithms,
+e.g. [`ascon-hash256`] and [`ascon-aead128`].
 
 ## Minimum Supported Rust Version
 
@@ -67,7 +53,5 @@ dual licensed as above, without any additional terms or conditions.
 [`ascon-aead128`]: https://docs.rs/ascon-aead128
 [`ascon-hash256`]: https://docs.rs/ascon-hash256
 [RustCrypto]: https://github.com/rustcrypto
-[Ascon]: https://ascon.iaik.tugraz.at/
-[New standard for lightweight cryptography]: https://www.nist.gov/news-events/news/2023/02/nist-selects-lightweight-cryptography-algorithms-protect-small-devices
+[Ascon]: https://ascon.iaik.tugraz.at
 [NIST Lightweight Cryptography]: https://csrc.nist.gov/projects/lightweight-cryptography/finalists
-[CAESAR competition]: https://competitions.cr.yp.to/caesar-submissions.html
