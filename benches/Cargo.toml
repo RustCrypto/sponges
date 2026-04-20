@@ -2,10 +2,7 @@
 name = "benches"
 version = "0.0.0"
 description = "Criteration benchmarks of the sponges crates"
-authors = [
-    "Sebastian Ramacher <sebastian.ramacher@ait.ac.at>",
-    "RustCrypto Developers",
-]
+authors = ["RustCrypto Developers"]
 edition = "2024"
 rust-version = "1.85"
 publish = false
@@ -14,11 +11,7 @@ publish = false
 
 [dev-dependencies]
 ascon = { path = "../ascon" }
-criterion = "0.4"
-rand = { version = "0.8", default-features = false, features = [
-    "std_rng",
-    "getrandom",
-] }
+criterion = "0.7"
 
 [[bench]]
 name = "ascon"
