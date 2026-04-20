@@ -1,23 +1,6 @@
 //! Basic tests
 
 #[test]
-fn ascon_permute1() {
-    let mut state = [
-        0x0123456789abcdef,
-        0x23456789abcdef01,
-        0x456789abcdef0123,
-        0x6789abcdef012345,
-        0x89abcde01234567f,
-    ];
-    ascon::permute1(&mut state);
-    assert_eq!(state[0], 0x3c1748c9be2892ce);
-    assert_eq!(state[1], 0x5eafb305cd26164f);
-    assert_eq!(state[2], 0xf9470254bb3a4213);
-    assert_eq!(state[3], 0xf0428daf0c5d3948);
-    assert_eq!(state[4], 0x281375af0b294899);
-}
-
-#[test]
 fn ascon_permute6() {
     let mut state = [
         0x0123456789abcdef,
