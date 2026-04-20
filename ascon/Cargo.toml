@@ -12,9 +12,6 @@ keywords = ["Ascon", "crypto", "permutation"]
 categories = ["cryptography", "no-std"]
 description = "Pure Rust implementation of the Ascon permutation"
 
-[dependencies]
-zeroize = { version = "1.6", default-features = false, optional = true }
-
 [lints.rust]
 missing_copy_implementations = "warn"
 missing_debug_implementations = "warn"
