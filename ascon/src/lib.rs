@@ -92,8 +92,8 @@ pub const fn permute<const ROUNDS: usize>(state: &mut State) {
 
     #[cfg(ascon_backend = "soft-compact")]
     {
-        let mut i = 12 - ROUNDS;
-        while i < RC.len() {
+        let mut i = MAX_ROUNDS - ROUNDS;
+        while i < MAX_ROUNDS {
             x = round(x, round_constant(i as u64));
             i += 1;
         }
