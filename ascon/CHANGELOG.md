@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.0 (2026-04-22)
+### Changed
+- Edition changed to 2024 and MSRV bumped to 1.85 ([#89])
+- Improved performance of permutations ([#118])
+- Replaced the `State` struct with free-standing permutation functions ([#122])
+
+### Removed
+- `zeroize` crate feature ([#122])
+
+[#89]: https://github.com/RustCrypto/sponges/pull/89
+[#118]: https://github.com/RustCrypto/sponges/pull/118
+[#122]: https://github.com/RustCrypto/sponges/pull/122
+
 ## 0.4.0 (2023-07-27)
 ### Added
 - `zeroize` feature ([#57])
