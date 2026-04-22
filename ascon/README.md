@@ -11,7 +11,7 @@ Pure Rust implementation of the [Ascon] permutation, winner of the
 [NIST Lightweight Cryptography] competition.
 
 This is a low-level crate used for implementation of higher-level agorithms,
-e.g. [`ascon-hash256`] and [`ascon-aead128`].
+e.g. [`ascon-hash256`], [`ascon-xof128`], and [`ascon-aead128`].
 
 ## Minimum Supported Rust Version
 
@@ -51,6 +51,7 @@ dual licensed as above, without any additional terms or conditions.
 [//]: # (links)
 
 [`ascon-aead128`]: https://docs.rs/ascon-aead128
+[`ascon-xof128`]: https://docs.rs/ascon-xof128
 [`ascon-hash256`]: https://docs.rs/ascon-hash256
 [RustCrypto]: https://github.com/rustcrypto
 [Ascon]: https://ascon.iaik.tugraz.at
