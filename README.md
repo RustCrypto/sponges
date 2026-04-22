@@ -6,11 +6,11 @@ Collection of [sponge functions] written in pure Rust.
 
 ## Supported Algorithms
 
-| Crate      | Algorithm       | Crates.io | Documentation |
-|------------|-----------------|-----------|---------------|
-| [`ascon`]  | [Ascon]         | [![crates.io](https://img.shields.io/crates/v/ascon.svg)](https://crates.io/crates/ascon) | [![Documentation](https://docs.rs/ascon/badge.svg)](https://docs.rs/ascon) |
-| [`bash-f`] | [`bash-f`][STB] | [![crates.io](https://img.shields.io/crates/v/bash-f.svg)](https://crates.io/crates/bash-f) | [![Documentation](https://docs.rs/bash-f/badge.svg)](https://docs.rs/bash-f) |
-| [`keccak`] | [Keccak]        | [![crates.io](https://img.shields.io/crates/v/keccak.svg)](https://crates.io/crates/keccak) | [![Documentation](https://docs.rs/keccak/badge.svg)](https://docs.rs/keccak) |
+| Algorithm       | Crate      | Crates.io | Documentation |
+|-----------------|------------|:---------:|:-------------:|
+| [Ascon]         | [`ascon`]  | [![crates.io](https://img.shields.io/crates/v/ascon.svg)](https://crates.io/crates/ascon) | [![Documentation](https://docs.rs/ascon/badge.svg)](https://docs.rs/ascon) |
+| [`bash-f`][STB] | [`bash-f`] | [![crates.io](https://img.shields.io/crates/v/bash-f.svg)](https://crates.io/crates/bash-f) | [![Documentation](https://docs.rs/bash-f/badge.svg)](https://docs.rs/bash-f) |
+| [Keccak]        | [`keccak`] | [![crates.io](https://img.shields.io/crates/v/keccak.svg)](https://crates.io/crates/keccak) | [![Documentation](https://docs.rs/keccak/badge.svg)](https://docs.rs/keccak) |
 
 ## License
 
