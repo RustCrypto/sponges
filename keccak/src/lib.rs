@@ -28,7 +28,9 @@ pub use types::*;
 /// Struct which handles switching between available backends.
 #[derive(Debug, Copy, Clone)]
 pub struct Keccak {
-    #[cfg(target_arch = "aarch64")]
+    // TODO: remove `not(target_abi = "softfloat")` after the compiler is improved, see:
+    // https://github.com/rust-lang/rust/issues/160301
+    #[cfg(all(target_arch = "aarch64", not(target_abi = "softfloat")))]
     armv8_sha3: armv8_sha3_intrinsics::InitToken,
 }
 
@@ -36,7 +38,7 @@ impl Default for Keccak {
     #[inline]
     fn default() -> Self {
         Self {
-            #[cfg(target_arch = "aarch64")]
+            #[cfg(all(target_arch = "aarch64", not(target_abi = "softfloat")))]
             armv8_sha3: armv8_sha3_intrinsics::init(),
         }
     }
@@ -65,6 +67,8 @@ impl Keccak {
             } else if #[cfg(keccak_backend = "aarch64_sha3")] {
                 #[cfg(not(target_arch = "aarch64"))]
                 compile_error!("aarch64_sha3 backend can be used only on AArch64 targets!");
+                #[cfg(target_abi = "softfloat")]
+                compile_error!("aarch64_sha3 backend can not be used with softfloat ABI!");
                 #[cfg(not(target_feature = "sha3"))]
                 compile_error!("aarch64_sha3 backend requires sha3 target feature to be enabled!");
 
@@ -74,7 +78,7 @@ impl Keccak {
             }
         );
 
-        #[cfg(target_arch = "aarch64")]
+        #[cfg(all(target_arch = "aarch64", not(target_abi = "softfloat")))]
         if self.armv8_sha3.get() {
             #[target_feature(enable = "sha3")]
             unsafe fn aarch64_sha3_inner(f: impl BackendClosure) {
