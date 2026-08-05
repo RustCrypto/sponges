@@ -28,6 +28,8 @@ pub use types::*;
 /// Struct which handles switching between available backends.
 #[derive(Debug, Copy, Clone)]
 pub struct Keccak {
+    // TODO: remove `not(target_abi = "softfloat")` after the compiler is improved, see:
+    // https://github.com/rust-lang/rust/issues/160301
     #[cfg(all(target_arch = "aarch64", not(target_abi = "softfloat")))]
     armv8_sha3: armv8_sha3_intrinsics::InitToken,
 }
