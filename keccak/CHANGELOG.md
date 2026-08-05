@@ -5,8 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.2.0 (2026-03-16)
+## 0.2.1 (UNRELEASED)
+### Fixed
+- Warning on softfloat AArch64 targets by not enabling `aarch64_sha3` backend on them ([#126])
 
+[#126]: https://github.com/RustCrypto/sponges/pull/126
+
+## 0.2.0 (2026-03-16)
 ### Added
 - `keccak_backend` configuration parameter with `aarch64_sha3`, `simd128`,
   `simd256`, `simd512`, and `soft` values ([#105], [#106], [#113])
