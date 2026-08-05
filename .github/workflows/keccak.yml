@@ -32,6 +32,7 @@ jobs:
           - ${{needs.set-msrv.outputs.msrv}}
           - stable
         target:
+          - aarch64-unknown-none-softfloat
           - thumbv7em-none-eabi
           - wasm32-unknown-unknown
     steps:
