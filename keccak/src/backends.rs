@@ -4,7 +4,7 @@ use crate::types::*;
 #[cfg(feature = "parallel")]
 use hybrid_array::ArraySize;
 
-#[cfg(target_arch = "aarch64")]
+#[cfg(all(target_arch = "aarch64", not(target_abi = "softfloat")))]
 pub(crate) mod aarch64_sha3;
 #[cfg(any(
     keccak_backend = "simd128",
