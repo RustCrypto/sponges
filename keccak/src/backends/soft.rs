@@ -115,6 +115,8 @@ pub(crate) fn keccak_p<L: LaneSize, const ROUNDS: usize>(state: &mut [L; PLEN]) 
     let round_consts = RC[..L::KECCAK_F_ROUND_COUNT]
         .last_chunk::<ROUNDS>()
         .expect("Number of rounds greater than `KECCAK_F_ROUND_COUNT` is not supported!")
+        .iter()
+        .copied()
         .map(L::truncate_rc);
 
     // Not unrolling this loop results in a much smaller function, plus
