@@ -15,12 +15,10 @@ pub trait LaneSize:
     + BitXorAssign
     + BitXor<Output = Self>
     + Not<Output = Self>
+    + 'static
 {
-    /// Number of rounds of the Keccak-f permutation.
-    const KECCAK_F_ROUND_COUNT: usize;
-
-    /// Truncate function.
-    fn truncate_rc(rc: u64) -> Self;
+    /// Round constants
+    const RC: &[Self];
 
     /// Rotate left function.
     #[must_use]
@@ -30,12 +28,16 @@ pub trait LaneSize:
 macro_rules! impl_lanesize {
     ($type:ty, $round:expr) => {
         impl LaneSize for $type {
-            const KECCAK_F_ROUND_COUNT: usize = $round;
-
-            #[allow(clippy::cast_possible_truncation, trivial_numeric_casts)]
-            fn truncate_rc(rc: u64) -> Self {
-                rc as Self
-            }
+            const RC: &[Self] = &{
+                let mut res = [0; $round];
+                let mut i = 0;
+                #[allow(clippy::cast_possible_truncation, trivial_numeric_casts)]
+                while i < res.len() {
+                    res[i] = RC[i] as Self;
+                    i += 1;
+                }
+                res
+            };
 
             fn rotate_left(self, n: u32) -> Self {
                 self.rotate_left(n)
@@ -53,6 +55,7 @@ impl_lanesize!(u64, F1600_ROUNDS);
 macro_rules! unroll5 {
     ($var: ident, $body: block) => {
         #[cfg(not(keccak_backend_soft = "compact"))]
+        #[allow(non_upper_case_globals)]
         {
             { const $var: usize = 0; $body; }
             { const $var: usize = 1; $body; }
@@ -71,6 +74,7 @@ macro_rules! unroll5 {
 macro_rules! unroll24 {
     ($var: ident, $body: block) => {
         #[cfg(not(keccak_backend_soft = "compact"))]
+        #[allow(non_upper_case_globals)]
         {
             { const $var: usize = 0; $body; }
             { const $var: usize = 1; $body; }
@@ -108,14 +112,14 @@ macro_rules! unroll24 {
 ///
 /// # Panics
 /// If the `ROUNDS` is greater than `L::KECCAK_F_ROUND_COUNT`.
-#[allow(non_upper_case_globals, unused_assignments)]
 pub(crate) fn keccak_p<L: LaneSize, const ROUNDS: usize>(state: &mut [L; PLEN]) {
+    const { assert!(ROUNDS <= L::RC.len()) };
+
     // https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf#page=25
     // "the rounds of KECCAK-p[b, nr] match the last rounds of KECCAK-f[b]"
-    let round_consts = RC[..L::KECCAK_F_ROUND_COUNT]
+    let round_consts = L::RC
         .last_chunk::<ROUNDS>()
-        .expect("Number of rounds greater than `KECCAK_F_ROUND_COUNT` is not supported!")
-        .map(L::truncate_rc);
+        .expect("Number of rounds is checked above");
 
     // Not unrolling this loop results in a much smaller function, plus
     // it positively influences performance due to the smaller load on I-cache
@@ -159,7 +163,7 @@ pub(crate) fn keccak_p<L: LaneSize, const ROUNDS: usize>(state: &mut [L; PLEN]) 
         });
 
         // Iota
-        state[0] ^= rc;
+        state[0] ^= *rc;
     }
 }
 
