@@ -3,8 +3,7 @@ use core::ops::{BitAnd, BitAndAssign, BitXor, BitXorAssign, Not};
 #[cfg(feature = "parallel")]
 use hybrid_array::typenum::U1;
 
-/// Keccak is a permutation over an array of lanes which comprise the sponge
-/// construction.
+/// Keccak is a permutation over an array of lanes which comprise the sponge construction.
 pub trait LaneSize:
     Copy
     + Clone
@@ -51,63 +50,6 @@ impl_lanesize!(u16, F400_ROUNDS);
 impl_lanesize!(u32, F800_ROUNDS);
 impl_lanesize!(u64, F1600_ROUNDS);
 
-#[rustfmt::skip]
-macro_rules! unroll5 {
-    ($var: ident, $body: block) => {
-        #[cfg(not(keccak_backend_soft = "compact"))]
-        #[allow(non_upper_case_globals)]
-        {
-            { const $var: usize = 0; $body; }
-            { const $var: usize = 1; $body; }
-            { const $var: usize = 2; $body; }
-            { const $var: usize = 3; $body; }
-            { const $var: usize = 4; $body; }
-        }
-        #[cfg(keccak_backend_soft = "compact")]
-        {
-            for $var in 0..5 $body
-        }
-    };
-}
-
-#[rustfmt::skip]
-macro_rules! unroll24 {
-    ($var: ident, $body: block) => {
-        #[cfg(not(keccak_backend_soft = "compact"))]
-        #[allow(non_upper_case_globals)]
-        {
-            { const $var: usize = 0; $body; }
-            { const $var: usize = 1; $body; }
-            { const $var: usize = 2; $body; }
-            { const $var: usize = 3; $body; }
-            { const $var: usize = 4; $body; }
-            { const $var: usize = 5; $body; }
-            { const $var: usize = 6; $body; }
-            { const $var: usize = 7; $body; }
-            { const $var: usize = 8; $body; }
-            { const $var: usize = 9; $body; }
-            { const $var: usize = 10; $body; }
-            { const $var: usize = 11; $body; }
-            { const $var: usize = 12; $body; }
-            { const $var: usize = 13; $body; }
-            { const $var: usize = 14; $body; }
-            { const $var: usize = 15; $body; }
-            { const $var: usize = 16; $body; }
-            { const $var: usize = 17; $body; }
-            { const $var: usize = 18; $body; }
-            { const $var: usize = 19; $body; }
-            { const $var: usize = 20; $body; }
-            { const $var: usize = 21; $body; }
-            { const $var: usize = 22; $body; }
-            { const $var: usize = 23; $body; }
-        }
-        #[cfg(keccak_backend_soft = "compact")]
-        {
-            for $var in 0..24 $body
-        }
-    };
-}
-
 /// Generic Keccak-p sponge function.
 ///
 /// # Panics
@@ -127,43 +69,40 @@ pub(crate) fn keccak_p<L: LaneSize, const ROUNDS: usize>(state: &mut [L; PLEN]) 
         let mut array = [L::default(); 5];
 
         // Theta
-        unroll5!(x, {
-            unroll5!(y, {
+        for x in 0..5 {
+            for y in 0..5 {
                 array[x] ^= state[5 * y + x];
-            });
-        });
+            }
+        }
 
-        unroll5!(x, {
+        for x in 0..5 {
             let t1 = array[(x + 4) % 5];
             let t2 = array[(x + 1) % 5].rotate_left(1);
-            unroll5!(y, {
+            for y in 0..5 {
                 state[5 * y + x] ^= t1 ^ t2;
-            });
-        });
+            }
+        }
 
         // Rho and pi
         let mut last = state[1];
-        unroll24!(x, {
+        for x in 0..24 {
             array[0] = state[PI[x]];
             state[PI[x]] = last.rotate_left(RHO[x]);
-            #[allow(unused_assignments)]
-            {
-                last = array[0];
-            }
-        });
+            last = array[0];
+        }
 
         // Chi
-        unroll5!(y_step, {
+        for y_step in 0..5 {
             let y = 5 * y_step;
 
             array.copy_from_slice(&state[y..][..5]);
 
-            unroll5!(x, {
+            for x in 0..5 {
                 let t1 = !array[(x + 1) % 5];
                 let t2 = array[(x + 2) % 5];
                 state[y + x] = array[x] ^ (t1 & t2);
-            });
-        });
+            }
+        }
 
         // Iota
         state[0] ^= *rc;
