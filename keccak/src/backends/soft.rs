@@ -146,7 +146,10 @@ pub(crate) fn keccak_p<L: LaneSize, const ROUNDS: usize>(state: &mut [L; PLEN]) 
         unroll24!(x, {
             array[0] = state[PI[x]];
             state[PI[x]] = last.rotate_left(RHO[x]);
-            last = array[0];
+            #[allow(unused_assignments)]
+            {
+                last = array[0];
+            }
         });
 
         // Chi
