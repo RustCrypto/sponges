@@ -9,7 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Improved performance of software backend on some targets ([#129])
 
+### Removed
+- `keccak_backend_soft = "compact"` configuration flag and explicit loop unrolling  ([#130])
+
 [#129]: https://github.com/RustCrypto/sponges/pull/129
+[#130]: https://github.com/RustCrypto/sponges/pull/130
 
 ## 0.2.1 (2026-08-05)
 ### Fixed
