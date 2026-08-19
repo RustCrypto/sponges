@@ -12,11 +12,18 @@ use core::simd::u64x4 as u64xN;
 use core::simd::u64x8 as u64xN;
 
 impl LaneSize for u64xN {
-    const KECCAK_F_ROUND_COUNT: usize = crate::consts::F1600_ROUNDS;
+    const RC: &[Self] = &{
+        use crate::consts::{F1600_ROUNDS, RC};
 
-    fn truncate_rc(rc: u64) -> Self {
-        Self::splat(rc)
-    }
+        let mut res = [Self::splat(0); F1600_ROUNDS];
+        let mut i = 0;
+        #[allow(clippy::cast_possible_truncation, trivial_numeric_casts)]
+        while i < res.len() {
+            res[i] = Self::splat(RC[i]);
+            i += 1;
+        }
+        res
+    };
 
     fn rotate_left(self, n: u32) -> Self {
         self << Self::splat(n.into()) | self >> Self::splat((64 - n).into())
